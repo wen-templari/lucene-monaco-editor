@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { luceneLanguageDefinition, luceneTheme, registerLuceneLanguage, type FieldSchema } from './lucene-monarch'
+import { luceneLanguageDefinition, luceneDarkTheme, registerLuceneLanguage, type FieldSchema } from './lucene-monarch'
 
 // Mock Monaco Editor
 const mockMonaco = {
@@ -76,15 +76,15 @@ describe('luceneLanguageDefinition', () => {
 
 describe('luceneTheme', () => {
   it('should have correct theme structure', () => {
-    expect(luceneTheme).toHaveProperty('base', 'vs-dark')
-    expect(luceneTheme).toHaveProperty('inherit', true)
-    expect(luceneTheme).toHaveProperty('rules')
-    expect(luceneTheme).toHaveProperty('colors')
-    expect(Array.isArray(luceneTheme.rules)).toBe(true)
+    expect(luceneDarkTheme).toHaveProperty('base', 'vs-dark')
+    expect(luceneDarkTheme).toHaveProperty('inherit', true)
+    expect(luceneDarkTheme).toHaveProperty('rules')
+    expect(luceneDarkTheme).toHaveProperty('colors')
+    expect(Array.isArray(luceneDarkTheme.rules)).toBe(true)
   })
 
   it('should include rules for all token types', () => {
-    const tokenTypes = luceneTheme.rules.map(rule => rule.token)
+    const tokenTypes = luceneDarkTheme.rules.map((rule: any) => rule.token)
     expect(tokenTypes).toContain('field')
     expect(tokenTypes).toContain('keyword')
     expect(tokenTypes).toContain('operator')
@@ -103,7 +103,7 @@ describe('registerLuceneLanguage', () => {
       'lucene',
       luceneLanguageDefinition
     )
-    expect(mockMonaco.editor.defineTheme).toHaveBeenCalledWith('lucene-theme', luceneTheme)
+    expect(mockMonaco.editor.defineTheme).toHaveBeenCalledWith('lucene-dark-theme', luceneDarkTheme)
     expect(mockMonaco.languages.setLanguageConfiguration).toHaveBeenCalled()
     expect(mockMonaco.languages.registerCompletionItemProvider).toHaveBeenCalled()
   })

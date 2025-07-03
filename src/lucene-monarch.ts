@@ -103,7 +103,7 @@ export const luceneLanguageDefinition: languages.IMonarchLanguage = {
   }
 };
 
-export const luceneTheme: editor.IStandaloneThemeData = {
+export const luceneDarkTheme: editor.IStandaloneThemeData = {
   base: 'vs-dark',
   inherit: true,
   rules: [
@@ -129,6 +129,32 @@ export const luceneTheme: editor.IStandaloneThemeData = {
   colors: {}
 };
 
+export const luceneLightTheme: editor.IStandaloneThemeData = {
+  base: 'vs',
+  inherit: true,
+  rules: [
+    { token: 'field', foreground: '0451A5' },                    // Darker blue for field names
+    { token: 'keyword', foreground: 'AF00DB', fontStyle: 'bold' }, // Purple for AND/OR/NOT
+    { token: 'keyword.range', foreground: 'AF00DB' },            // Purple for TO
+    { token: 'operator', foreground: '2B2B2B' },                 // Dark gray for +/-
+    { token: 'operator.fuzzy', foreground: '795E26' },          // Brown for ~
+    { token: 'operator.boost', foreground: '008000' },          // Green for ^
+    { token: 'operator.wildcard', foreground: '795E26' },       // Brown for *?
+    { token: 'string', foreground: 'A31515' },                  // Red for quoted strings
+    { token: 'string.proximity', foreground: 'A31515' },        // Red for proximity searches
+    { token: 'string.escape', foreground: 'EE0000' },          // Bright red for escapes
+    { token: 'number', foreground: '098658' },                 // Dark green for numbers
+    { token: 'date', foreground: '0070C1' },                   // Blue for dates
+    { token: 'regexp', foreground: '811F3F' },                 // Dark red for regular expressions
+    { token: 'identifier', foreground: '2B2B2B' },             // Dark gray for terms
+    { token: 'delimiter.colon', foreground: '2B2B2B' },        // Dark gray for colons
+    { token: 'delimiter.parenthesis', foreground: 'B8860B' },   // Dark golden rod for parentheses
+    { token: 'delimiter.square', foreground: 'B8860B' },        // Dark golden rod for square brackets
+    { token: 'delimiter.curly', foreground: 'B8860B' },         // Dark golden rod for curly braces
+  ],
+  colors: {}
+};
+
 // Track if language is already registered
 let isLanguageRegistered = false;
 let completionProviderDisposable: IDisposable | null = null;
@@ -141,9 +167,6 @@ export function registerLuceneLanguage(monaco: typeof import('monaco-editor'), f
     
     // Set the tokenizer
     monaco.languages.setMonarchTokensProvider('lucene', luceneLanguageDefinition);
-    
-    // Define the theme
-    monaco.editor.defineTheme('lucene-theme', luceneTheme);
     
     // Configure language features
     monaco.languages.setLanguageConfiguration('lucene', {
@@ -168,6 +191,10 @@ export function registerLuceneLanguage(monaco: typeof import('monaco-editor'), f
     
     isLanguageRegistered = true;
   }
+  
+  // Always re-define themes to allow switching
+  monaco.editor.defineTheme('lucene-dark-theme', luceneDarkTheme);
+  monaco.editor.defineTheme('lucene-light-theme', luceneLightTheme);
   
   // Dispose previous completion provider if it exists
   if (completionProviderDisposable) {

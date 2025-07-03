@@ -75,37 +75,32 @@ export default function FieldSchemaEditor({ fieldSchema, onChange }: FieldSchema
   }
 
   return (
-    <div style={{ marginBottom: '20px', padding: '16px', border: '1px solid #ddd', borderRadius: '4px' }}>
-      <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: 'bold' }}>Field Schema Editor</h3>
-      
+    <div className="space-y-4">
       {/* Add new field form */}
-      <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+      <div className="bg-gray-100 backdrop-blur-sm rounded-lg p-4 border border-gray-300 dark:bg-gray-700/50 dark:border-gray-600">
+        <div className="flex flex-wrap gap-3 items-center">
           <input
             type="text"
             placeholder="Field name (e.g., level)"
             value={newFieldKey}
             onChange={(e) => setNewFieldKey(e.target.value)}
-            style={{ padding: '4px 8px', border: '1px solid #ccc', borderRadius: '4px', minWidth: '120px' }}
+            className="px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-32 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
           />
           <input
             type="text"
             placeholder="Value (e.g., warning)"
             value={newFieldValue}
             onChange={(e) => setNewFieldValue(e.target.value)}
-            style={{ padding: '4px 8px', border: '1px solid #ccc', borderRadius: '4px', minWidth: '120px' }}
+            className="px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-32 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
           />
           <button
             onClick={addField}
             disabled={!newFieldKey.trim()}
-            style={{
-              padding: '4px 12px',
-              backgroundColor: newFieldKey.trim() ? '#007acc' : '#ccc',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: newFieldKey.trim() ? 'pointer' : 'not-allowed'
-            }}
+            className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+              newFieldKey.trim()
+                ? 'bg-blue-600 hover:bg-blue-700 text-white lucene-button'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-600 dark:text-gray-400'
+            }`}
           >
             Add Field/Value
           </button>
@@ -113,62 +108,34 @@ export default function FieldSchemaEditor({ fieldSchema, onChange }: FieldSchema
       </div>
 
       {/* Existing fields */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <div className="space-y-3">
         {fieldSchema.map((field) => (
-          <div key={field.key} style={{ padding: '12px', border: '1px solid #e0e0e0', borderRadius: '4px', backgroundColor: '#fafafa' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 'bold', color: '#333' }}>
+          <div key={field.key} className="bg-gray-50 backdrop-blur-sm rounded-lg p-4 border border-gray-200 dark:bg-gray-700/30 dark:border-gray-600">
+            <div className="flex justify-between items-center mb-3">
+              <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 flex items-center">
+                <span className="bg-purple-600 w-6 h-6 rounded flex items-center justify-center text-xs mr-2">
+                  🏷️
+                </span>
                 {field.key}:
               </h4>
               <button
                 onClick={() => removeField(field.key)}
-                style={{
-                  padding: '2px 8px',
-                  backgroundColor: '#dc3545',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '12px'
-                }}
+                className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded-md transition-colors lucene-button"
               >
                 Remove Field
               </button>
             </div>
             
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+            <div className="flex flex-wrap gap-2 mb-3">
               {field.values.map((value, index) => (
                 <span
                   key={index}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    padding: '2px 8px',
-                    backgroundColor: '#e3f2fd',
-                    border: '1px solid #bbdefb',
-                    borderRadius: '12px',
-                    fontSize: '12px',
-                    color: '#1976d2'
-                  }}
+                  className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 border border-blue-300 rounded-full text-blue-700 text-xs dark:bg-blue-600/20 dark:border-blue-500/30 dark:text-blue-300"
                 >
                   {value}
                   <button
                     onClick={() => removeValue(field.key, value)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: '#d32f2f',
-                      cursor: 'pointer',
-                      fontSize: '10px',
-                      padding: '0',
-                      width: '14px',
-                      height: '14px',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
+                    className="ml-1 text-red-600 hover:text-red-500 transition-colors dark:text-red-400 dark:hover:text-red-300"
                   >
                     ×
                   </button>
@@ -182,9 +149,14 @@ export default function FieldSchemaEditor({ fieldSchema, onChange }: FieldSchema
       </div>
 
       {fieldSchema.length === 0 && (
-        <p style={{ color: '#666', fontStyle: 'italic', textAlign: 'center' }}>
-          No custom fields defined. Add a field above to get started.
-        </p>
+        <div className="text-center py-8">
+          <div className="text-gray-500 dark:text-gray-400 mb-2">
+            <span className="text-2xl">📋</span>
+          </div>
+          <p className="text-gray-500 dark:text-gray-400 italic">
+            No custom fields defined. Add a field above to get started.
+          </p>
+        </div>
       )}
     </div>
   )
@@ -203,33 +175,22 @@ function AddValueForm({ fieldKey, onAddValue }: { fieldKey: string; onAddValue: 
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+    <form onSubmit={handleSubmit} className="flex gap-2 items-center">
       <input
         type="text"
         placeholder="Add new value..."
         value={newValue}
         onChange={(e) => setNewValue(e.target.value)}
-        style={{ 
-          padding: '3px 6px', 
-          border: '1px solid #ccc', 
-          borderRadius: '3px', 
-          fontSize: '12px',
-          flex: 1,
-          minWidth: '100px'
-        }}
+        className="flex-1 px-2 py-1 bg-white border border-gray-300 rounded text-gray-900 placeholder-gray-500 text-xs focus:ring-1 focus:ring-blue-500 focus:border-transparent min-w-24 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
       />
       <button
         type="submit"
         disabled={!newValue.trim()}
-        style={{
-          padding: '3px 8px',
-          backgroundColor: newValue.trim() ? '#28a745' : '#ccc',
-          color: 'white',
-          border: 'none',
-          borderRadius: '3px',
-          cursor: newValue.trim() ? 'pointer' : 'not-allowed',
-          fontSize: '12px'
-        }}
+        className={`px-2 py-1 text-xs rounded transition-colors ${
+          newValue.trim()
+            ? 'bg-green-600 hover:bg-green-700 text-white lucene-button'
+            : 'bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-600 dark:text-gray-400'
+        }`}
       >
         +
       </button>
