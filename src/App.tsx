@@ -46,17 +46,21 @@ location:123.123.123`)
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 text-gray-900 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 dark:text-white">
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 dark:bg-gray-800/50 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+          <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+            {/* Main title and description */}
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
                 Lucene Monaco Editor
               </h1>
-              <p className="mt-2 text-gray-600 dark:text-gray-400">
+              <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600 dark:text-gray-400 leading-relaxed">
                 Intelligent Lucene query editor with syntax highlighting and smart completion
               </p>
             </div>
-            <div className="flex items-center space-x-4">
+            
+            {/* Controls section */}
+            <div className="flex items-center justify-between sm:justify-end">
+              {/* Theme toggle */}
               <button
                 onClick={toggleTheme}
                 className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors"
@@ -72,11 +76,15 @@ location:123.123.123`)
                   </svg>
                 )}
               </button>
-              <div className="px-3 py-1 bg-blue-100 border border-blue-300 rounded-full text-blue-700 text-sm dark:bg-blue-600/20 dark:border-blue-500/30 dark:text-blue-300">
-                v4.0 Beta
-              </div>
-              <div className="px-3 py-1 bg-green-100 border border-green-300 rounded-full text-green-700 text-sm dark:bg-green-600/20 dark:border-green-500/30 dark:text-green-300">
-                Tailwind CSS 4
+              
+              {/* Version badges */}
+              <div className="flex items-center space-x-2 ml-3 sm:ml-4">
+                <div className="px-2 sm:px-3 py-1 bg-blue-100 border border-blue-300 rounded-full text-blue-700 text-xs sm:text-sm dark:bg-blue-600/20 dark:border-blue-500/30 dark:text-blue-300">
+                  <span className="hidden xs:inline">v4.0 </span>Beta
+                </div>
+                <div className="hidden sm:flex px-3 py-1 bg-green-100 border border-green-300 rounded-full text-green-700 text-sm dark:bg-green-600/20 dark:border-green-500/30 dark:text-green-300">
+                  Tailwind CSS 4
+                </div>
               </div>
             </div>
           </div>
@@ -84,11 +92,11 @@ location:123.123.123`)
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Field Schema Section */}
-        <div className="mb-8">
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200 p-6 dark:bg-gray-800/50 dark:border-gray-700">
-            <h2 className="text-xl font-semibold mb-4 flex items-center">
+        <div className="mb-6 sm:mb-8">
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200 p-4 sm:p-6 dark:bg-gray-800/50 dark:border-gray-700">
+            <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 flex items-center">
               <span className="bg-blue-600 w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold mr-3">
                 ⚙️
               </span>
@@ -102,8 +110,8 @@ location:123.123.123`)
         </div>
 
         {/* Tips Section */}
-        <div className="mb-6">
-          <div className="bg-gradient-to-r from-blue-100/50 to-purple-100/50 backdrop-blur-sm rounded-xl border border-blue-300/50 p-4 dark:from-blue-900/50 dark:to-purple-900/50 dark:border-blue-500/30">
+        <div className="mb-4 sm:mb-6">
+          <div className="bg-gradient-to-r from-blue-100/50 to-purple-100/50 backdrop-blur-sm rounded-xl border border-blue-300/50 p-3 sm:p-4 dark:from-blue-900/50 dark:to-purple-900/50 dark:border-blue-500/30">
             <div className="flex items-start space-x-3">
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
@@ -111,10 +119,10 @@ location:123.123.123`)
                 </div>
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-blue-700 mb-1 dark:text-blue-300">Completion Tips</h3>
-                <p className="text-gray-700 text-sm dark:text-gray-300">
-                  Press <kbd className="px-2 py-1 bg-gray-200 rounded text-xs font-mono dark:bg-gray-700">Ctrl+Space</kbd> for suggestions, 
-                  or type field names and press <kbd className="px-2 py-1 bg-gray-200 rounded text-xs font-mono dark:bg-gray-700">:</kbd> for field-specific values
+                <h3 className="font-semibold text-blue-700 mb-1 text-sm sm:text-base dark:text-blue-300">Completion Tips</h3>
+                <p className="text-gray-700 text-xs sm:text-sm dark:text-gray-300 leading-relaxed">
+                  Press <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-gray-200 rounded text-xs font-mono dark:bg-gray-700">Ctrl+Space</kbd> for suggestions, 
+                  or type field names and press <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-gray-200 rounded text-xs font-mono dark:bg-gray-700">:</kbd> for field-specific values
                 </p>
               </div>
             </div>
@@ -123,26 +131,26 @@ location:123.123.123`)
 
         {/* Editor Section */}
         <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200 overflow-hidden dark:bg-gray-800/50 dark:border-gray-700">
-          <div className="bg-gray-50 px-6 py-4 border-b border-gray-200 dark:bg-gray-900/50 dark:border-gray-700">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold flex items-center">
+          <div className="bg-gray-50 px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 dark:bg-gray-900/50 dark:border-gray-700">
+            <div className="flex flex-col space-y-2 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+              <h2 className="text-base sm:text-lg font-semibold flex items-center">
                 <span className="bg-purple-600 w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold mr-3">
                   🔍
                 </span>
                 Lucene Query Editor
               </h2>
-              <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+              <div className="flex items-center space-x-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                 <div className="flex items-center space-x-1">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                   <span>Connected</span>
                 </div>
-                <span>•</span>
-                <span>Auto-completion enabled</span>
+                <span className="hidden sm:inline">•</span>
+                <span className="hidden sm:inline">Auto-completion enabled</span>
               </div>
             </div>
           </div>
           
-          <div className="h-96 bg-white dark:bg-gray-900">
+          <div className="h-80 sm:h-96 bg-white dark:bg-gray-900">
             <Editor
               height="100%"
               defaultLanguage="lucene"
@@ -196,10 +204,11 @@ location:123.123.123`)
         </div>
 
         {/* Footer Info */}
-        <div className="mt-8 text-center text-gray-600 text-sm dark:text-gray-500">
-          <p>
-            Built with React, Monaco Editor, and Tailwind CSS 4 • 
-            <a href="https://github.com/wen-templari/lucene-monaco-editor" className="text-blue-600 hover:text-blue-500 ml-1 dark:text-blue-400 dark:hover:text-blue-300">
+        <div className="mt-6 sm:mt-8 text-center text-gray-600 text-xs sm:text-sm dark:text-gray-500 px-4">
+          <p className="flex flex-col sm:flex-row sm:items-center sm:justify-center">
+            <span>Built with React, Monaco Editor, and Tailwind CSS 4</span>
+            <span className="hidden sm:inline mx-2">•</span>
+            <a href="https://github.com/wen-templari/lucene-monaco-editor" className="text-blue-600 hover:text-blue-500 mt-1 sm:mt-0 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">
               View on GitHub
             </a>
           </p>

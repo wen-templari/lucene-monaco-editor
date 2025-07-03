@@ -77,26 +77,26 @@ export default function FieldSchemaEditor({ fieldSchema, onChange }: FieldSchema
   return (
     <div className="space-y-4">
       {/* Add new field form */}
-      <div className="bg-gray-100 backdrop-blur-sm rounded-lg p-4 border border-gray-300 dark:bg-gray-700/50 dark:border-gray-600">
-        <div className="flex flex-wrap gap-3 items-center">
+      <div className="bg-gray-100 backdrop-blur-sm rounded-lg p-3 sm:p-4 border border-gray-300 dark:bg-gray-700/50 dark:border-gray-600">
+        <div className="flex flex-col space-y-3 sm:flex-row sm:flex-wrap sm:gap-3 sm:items-center sm:space-y-0">
           <input
             type="text"
             placeholder="Field name (e.g., level)"
             value={newFieldKey}
             onChange={(e) => setNewFieldKey(e.target.value)}
-            className="px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-32 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
+            className="w-full sm:w-auto px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:min-w-32 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
           />
           <input
             type="text"
             placeholder="Value (e.g., warning)"
             value={newFieldValue}
             onChange={(e) => setNewFieldValue(e.target.value)}
-            className="px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-32 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
+            className="w-full sm:w-auto px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:min-w-32 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
           />
           <button
             onClick={addField}
             disabled={!newFieldKey.trim()}
-            className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+            className={`w-full sm:w-auto px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
               newFieldKey.trim()
                 ? 'bg-blue-600 hover:bg-blue-700 text-white lucene-button'
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-600 dark:text-gray-400'
@@ -110,8 +110,8 @@ export default function FieldSchemaEditor({ fieldSchema, onChange }: FieldSchema
       {/* Existing fields */}
       <div className="space-y-3">
         {fieldSchema.map((field) => (
-          <div key={field.key} className="bg-gray-50 backdrop-blur-sm rounded-lg p-4 border border-gray-200 dark:bg-gray-700/30 dark:border-gray-600">
-            <div className="flex justify-between items-center mb-3">
+          <div key={field.key} className="bg-gray-50 backdrop-blur-sm rounded-lg p-3 sm:p-4 border border-gray-200 dark:bg-gray-700/30 dark:border-gray-600">
+            <div className="flex flex-col space-y-2 sm:flex-row sm:justify-between sm:items-center sm:space-y-0 mb-3">
               <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 flex items-center">
                 <span className="bg-purple-600 w-6 h-6 rounded flex items-center justify-center text-xs mr-2">
                   🏷️
@@ -120,7 +120,7 @@ export default function FieldSchemaEditor({ fieldSchema, onChange }: FieldSchema
               </h4>
               <button
                 onClick={() => removeField(field.key)}
-                className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded-md transition-colors lucene-button"
+                className="w-full sm:w-auto px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded-md transition-colors lucene-button"
               >
                 Remove Field
               </button>
