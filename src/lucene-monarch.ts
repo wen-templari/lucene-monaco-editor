@@ -1,4 +1,9 @@
-import type { editor, languages } from 'monaco-editor';
+import type { editor, languages, IDisposable } from 'monaco-editor';
+
+export interface FieldSchema {
+  key: string;
+  values: string[];
+}
 
 export const luceneLanguageDefinition: languages.IMonarchLanguage = {
   defaultToken: '',
@@ -124,73 +129,153 @@ export const luceneTheme: editor.IStandaloneThemeData = {
   colors: {}
 };
 
-export function registerLuceneLanguage(monaco: typeof import('monaco-editor')) {
-  // Register the language
-  monaco.languages.register({ id: 'lucene' });
+// Track if language is already registered
+let isLanguageRegistered = false;
+let completionProviderDisposable: IDisposable | null = null;
+
+export function registerLuceneLanguage(monaco: typeof import('monaco-editor'), fieldSchema?: FieldSchema[]) {
+  // Only register language features once
+  if (!isLanguageRegistered) {
+    // Register the language
+    monaco.languages.register({ id: 'lucene' });
+    
+    // Set the tokenizer
+    monaco.languages.setMonarchTokensProvider('lucene', luceneLanguageDefinition);
+    
+    // Define the theme
+    monaco.editor.defineTheme('lucene-theme', luceneTheme);
+    
+    // Configure language features
+    monaco.languages.setLanguageConfiguration('lucene', {
+      brackets: [
+        ['(', ')'],
+        ['[', ']'],
+        ['{', '}']
+      ],
+      autoClosingPairs: [
+        { open: '(', close: ')' },
+        { open: '[', close: ']' },
+        { open: '{', close: '}' },
+        { open: '"', close: '"' }
+      ],
+      surroundingPairs: [
+        { open: '(', close: ')' },
+        { open: '[', close: ']' },
+        { open: '{', close: '}' },
+        { open: '"', close: '"' }
+      ]
+    });
+    
+    isLanguageRegistered = true;
+  }
   
-  // Set the tokenizer
-  monaco.languages.setMonarchTokensProvider('lucene', luceneLanguageDefinition);
+  // Dispose previous completion provider if it exists
+  if (completionProviderDisposable) {
+    completionProviderDisposable.dispose();
+  }
   
-  // Define the theme
-  monaco.editor.defineTheme('lucene-theme', luceneTheme);
-  
-  // Configure language features
-  monaco.languages.setLanguageConfiguration('lucene', {
-    brackets: [
-      ['(', ')'],
-      ['[', ']'],
-      ['{', '}']
-    ],
-    autoClosingPairs: [
-      { open: '(', close: ')' },
-      { open: '[', close: ']' },
-      { open: '{', close: '}' },
-      { open: '"', close: '"' }
-    ],
-    surroundingPairs: [
-      { open: '(', close: ')' },
-      { open: '[', close: ']' },
-      { open: '{', close: '}' },
-      { open: '"', close: '"' }
-    ]
-  });
-  
-  // Register completion item provider
-  monaco.languages.registerCompletionItemProvider('lucene', {
+  // Register new completion provider with current schema
+  completionProviderDisposable = monaco.languages.registerCompletionItemProvider('lucene', {
+    triggerCharacters: [':', ' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'],
     provideCompletionItems: (model, position) => {
       const word = model.getWordUntilPosition(position);
       const lineText = model.getLineContent(position.lineNumber);
       const textBeforeCursor = lineText.substring(0, position.column - 1);
       
-      const range = {
+      // Check context for smart suggestions
+      const isAfterColon = textBeforeCursor.match(/\w+:$/);
+      const isInRange = textBeforeCursor.match(/[[{][^}\]]*$/);
+      const isAfterOperator = textBeforeCursor.match(/\b(AND|OR|NOT|&&|\|\||!|\+|-)\s*$/);
+      const isAtStart = textBeforeCursor.trim() === '' || isAfterOperator;
+      const isTypingField = !isAfterColon && !isInRange && word.word.length > 0;
+
+      // Extract field name from "field:" or "field:value" pattern
+      const fieldMatch = textBeforeCursor.match(/(\w+):(\w*)$/);
+      const currentField = fieldMatch ? fieldMatch[1] : null;
+      const currentValue = fieldMatch ? fieldMatch[2] : '';
+      const isTypingAfterColon = currentField && fieldMatch;
+
+      // Calculate proper range for replacement
+      let range = {
         startLineNumber: position.lineNumber,
         endLineNumber: position.lineNumber,
         startColumn: word.startColumn,
         endColumn: word.endColumn,
       };
 
+      // Adjust range when typing after colon to replace only the value part
+      if (isTypingAfterColon && currentValue) {
+        const colonIndex = textBeforeCursor.lastIndexOf(':');
+        range = {
+          startLineNumber: position.lineNumber,
+          endLineNumber: position.lineNumber,
+          startColumn: colonIndex + 2, // Start after the colon
+          endColumn: position.column,
+        };
+      }
+
       const suggestions: monaco.languages.CompletionItem[] = [];
 
-      // Check context for smart suggestions
-      const isAfterColon = textBeforeCursor.match(/\w+:$/);
-      const isInRange = textBeforeCursor.match(/[[{][^}\]]*$/);
-      const isAfterOperator = textBeforeCursor.match(/\b(AND|OR|NOT|&&|\|\||!|\+|-)\s*$/);
-      const isAtStart = textBeforeCursor.trim() === '' || isAfterOperator;
+      // Check if we're typing after a field colon for field-specific value suggestions
+      if (isTypingAfterColon && fieldSchema) {
+        const schemaField = fieldSchema.find(f => f.key === currentField);
+        if (schemaField) {
+          // Filter values based on what user is typing after colon
+          const filteredValues = currentValue 
+            ? schemaField.values.filter(value => value.toLowerCase().startsWith(currentValue.toLowerCase()))
+            : schemaField.values;
+          
+          filteredValues.forEach(value => {
+            suggestions.push({
+              label: value,
+              kind: monaco.languages.CompletionItemKind.Value,
+              insertText: value,
+              documentation: `${currentField} field value`,
+              range: range,
+            });
+          });
+          // Return early to show only field-specific values
+          return { suggestions };
+        }
+      }
 
       // Field name suggestions
-      if (isAtStart || isAfterOperator) {
-        const fieldNames = [
+      if (isAtStart || isAfterOperator || isTypingField) {
+        // Default field names
+        const defaultFields = [
           'title', 'author', 'content', 'text', 'date', 'category', 
           'status', 'priority', 'score', 'name', 'description', 'tags'
         ];
         
-        fieldNames.forEach(field => {
+        // Add custom fields from schema
+        const customFields = fieldSchema ? fieldSchema.map(f => f.key) : [];
+        const allFields = [...defaultFields, ...customFields];
+        
+        // Remove duplicates
+        const uniqueFields = [...new Set(allFields)];
+        
+        // Filter fields based on what user is typing
+        const filteredFields = isTypingField 
+          ? uniqueFields.filter(field => field.toLowerCase().startsWith(word.word.toLowerCase()))
+          : uniqueFields;
+        
+        filteredFields.forEach(field => {
+          const isCustomField = fieldSchema?.some(f => f.key === field);
+          // Show field values in documentation for custom fields
+          const fieldValues = isCustomField ? fieldSchema?.find(f => f.key === field)?.values : [];
+          const valuePreview = fieldValues && fieldValues.length > 0 
+            ? ` (values: ${fieldValues.slice(0, 3).join(', ')}${fieldValues.length > 3 ? '...' : ''})`
+            : '';
+          
           suggestions.push({
             label: field,
             kind: monaco.languages.CompletionItemKind.Field,
             insertText: field + ':',
-            documentation: `Search in ${field} field`,
+            documentation: isCustomField 
+              ? `Custom field: ${field}${valuePreview}` 
+              : `Search in ${field} field`,
             range: range,
+            sortText: isCustomField ? `0${field}` : `1${field}`, // Prioritize custom fields
           });
         });
       }

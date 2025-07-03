@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { luceneLanguageDefinition, luceneTheme, registerLuceneLanguage } from './lucene-monarch'
+import { luceneLanguageDefinition, luceneTheme, registerLuceneLanguage, type FieldSchema } from './lucene-monarch'
 
 // Mock Monaco Editor
 const mockMonaco = {
@@ -14,6 +14,7 @@ const mockMonaco = {
       Keyword: 'Keyword',
       Text: 'Text',
       Snippet: 'Snippet',
+      Value: 'Value',
     },
     CompletionItemInsertTextRule: {
       InsertAsSnippet: 'InsertAsSnippet',
@@ -213,5 +214,193 @@ describe('Completion Provider', () => {
     expect(wildcardSuggestions.length).toBe(2)
     expect(wildcardSuggestions.some((s: { kind: string; label: string }) => s.label === '*')).toBe(true)
     expect(wildcardSuggestions.some((s: { kind: string; label: string }) => s.label === '?')).toBe(true)
+  })
+})
+
+describe('Custom Field Schema Completion', () => {
+  let completionProvider: unknown
+
+  const testFieldSchema: FieldSchema[] = [
+    { key: 'level', values: ['warning', 'info', 'error'] },
+    { key: 'location', values: ['123.123.123', '3333.444'] }
+  ]
+
+  beforeEach(() => {
+    mockMonaco.languages.registerCompletionItemProvider.mockClear()
+    registerLuceneLanguage(mockMonaco as typeof import('monaco-editor'), testFieldSchema)
+    completionProvider = mockMonaco.languages.registerCompletionItemProvider.mock.calls[0][1]
+  })
+
+  const createMockModel = (lineContent: string) => ({
+    getWordUntilPosition: vi.fn().mockReturnValue({
+      startColumn: 1,
+      endColumn: 1,
+      word: '',
+    }),
+    getLineContent: vi.fn().mockReturnValue(lineContent),
+  })
+
+  const createMockPosition = (lineNumber: number, column: number) => ({
+    lineNumber,
+    column,
+  })
+
+  it('should include custom fields in field name suggestions', () => {
+    const model = createMockModel('')
+    const position = createMockPosition(1, 1)
+    
+    const result = (completionProvider as { provideCompletionItems: (model: unknown, position: unknown) => { suggestions: { kind: string; label: string }[] } }).provideCompletionItems(model, position)
+    
+    const fieldSuggestions = result.suggestions.filter(
+      (s: { kind: string; label: string }) => s.kind === 'Field'
+    )
+    expect(fieldSuggestions.some((s: { kind: string; label: string }) => s.label === 'level')).toBe(true)
+    expect(fieldSuggestions.some((s: { kind: string; label: string }) => s.label === 'location')).toBe(true)
+  })
+
+  it('should provide field-specific value suggestions after field colon', () => {
+    const model = createMockModel('level:')
+    const position = createMockPosition(1, 7)
+    
+    const result = (completionProvider as { provideCompletionItems: (model: unknown, position: unknown) => { suggestions: { kind: string; label: string }[] } }).provideCompletionItems(model, position)
+    
+    const valueSuggestions = result.suggestions.filter(
+      (s: { kind: string; label: string }) => s.kind === 'Value'
+    )
+    expect(valueSuggestions.length).toBe(3)
+    expect(valueSuggestions.some((s: { kind: string; label: string }) => s.label === 'warning')).toBe(true)
+    expect(valueSuggestions.some((s: { kind: string; label: string }) => s.label === 'info')).toBe(true)
+    expect(valueSuggestions.some((s: { kind: string; label: string }) => s.label === 'error')).toBe(true)
+  })
+
+  it('should provide location-specific value suggestions', () => {
+    const model = createMockModel('location:')
+    const position = createMockPosition(1, 10)
+    
+    const result = (completionProvider as { provideCompletionItems: (model: unknown, position: unknown) => { suggestions: { kind: string; label: string }[] } }).provideCompletionItems(model, position)
+    
+    const valueSuggestions = result.suggestions.filter(
+      (s: { kind: string; label: string }) => s.kind === 'Value'
+    )
+    expect(valueSuggestions.length).toBe(2)
+    expect(valueSuggestions.some((s: { kind: string; label: string }) => s.label === '123.123.123')).toBe(true)
+    expect(valueSuggestions.some((s: { kind: string; label: string }) => s.label === '3333.444')).toBe(true)
+  })
+
+  it('should only show field-specific values when typing after custom field colon', () => {
+    const model = createMockModel('level:')
+    const position = createMockPosition(1, 7)
+    
+    const result = (completionProvider as { provideCompletionItems: (model: unknown, position: unknown) => { suggestions: { kind: string; label: string }[] } }).provideCompletionItems(model, position)
+    
+    // Should only show field values, not operators or other completions
+    expect(result.suggestions.every((s: { kind: string; label: string }) => s.kind === 'Value')).toBe(true)
+    expect(result.suggestions.length).toBe(3)
+  })
+
+  it('should fall back to general completions for unknown fields', () => {
+    const model = createMockModel('unknown:')
+    const position = createMockPosition(1, 9)
+    
+    const result = (completionProvider as { provideCompletionItems: (model: unknown, position: unknown) => { suggestions: { kind: string; label: string }[] } }).provideCompletionItems(model, position)
+    
+    // Should provide general completions since 'unknown' is not in schema
+    expect(result.suggestions.length).toBeGreaterThan(3)
+    expect(result.suggestions.some((s: { kind: string; label: string }) => s.kind === 'Operator')).toBe(true)
+  })
+
+  it('should provide field completions when typing field names', () => {
+    const model = createMockModel('lev')
+    model.getWordUntilPosition = vi.fn().mockReturnValue({
+      startColumn: 1,
+      endColumn: 4,
+      word: 'lev',
+    })
+    const position = createMockPosition(1, 4)
+    
+    const result = (completionProvider as { provideCompletionItems: (model: unknown, position: unknown) => { suggestions: { kind: string; label: string }[] } }).provideCompletionItems(model, position)
+    
+    const fieldSuggestions = result.suggestions.filter(
+      (s: { kind: string; label: string }) => s.kind === 'Field'
+    )
+    expect(fieldSuggestions.some((s: { kind: string; label: string }) => s.label === 'level')).toBe(true)
+  })
+
+  it('should prioritize custom fields in completion', () => {
+    const model = createMockModel('l')
+    model.getWordUntilPosition = vi.fn().mockReturnValue({
+      startColumn: 1,
+      endColumn: 2,
+      word: 'l',
+    })
+    const position = createMockPosition(1, 2)
+    
+    const result = (completionProvider as { provideCompletionItems: (model: unknown, position: unknown) => { suggestions: { kind: string; label: string; sortText?: string }[] } }).provideCompletionItems(model, position)
+    
+    const fieldSuggestions = result.suggestions.filter(
+      (s: { kind: string; label: string }) => s.kind === 'Field'
+    )
+    const levelSuggestion = fieldSuggestions.find((s: { kind: string; label: string; sortText?: string }) => s.label === 'level')
+    const locationSuggestion = fieldSuggestions.find((s: { kind: string; label: string; sortText?: string }) => s.label === 'location')
+    
+    expect(levelSuggestion?.sortText).toBe('0level')
+    expect(locationSuggestion?.sortText).toBe('0location')
+  })
+
+  it('should show field values in documentation for custom fields', () => {
+    const model = createMockModel('lev')
+    model.getWordUntilPosition = vi.fn().mockReturnValue({
+      startColumn: 1,
+      endColumn: 4,
+      word: 'lev',
+    })
+    const position = createMockPosition(1, 4)
+    
+    const result = (completionProvider as { provideCompletionItems: (model: unknown, position: unknown) => { suggestions: { kind: string; label: string; documentation?: string }[] } }).provideCompletionItems(model, position)
+    
+    const levelSuggestion = result.suggestions.find(
+      (s: { kind: string; label: string }) => s.kind === 'Field' && s.label === 'level'
+    )
+    expect(levelSuggestion?.documentation).toContain('Custom field: level')
+    expect(levelSuggestion?.documentation).toContain('warning, info, error')
+  })
+
+  it('should provide filtered value completions when typing after colon', () => {
+    const model = createMockModel('level:w')
+    model.getWordUntilPosition = vi.fn().mockReturnValue({
+      startColumn: 7,
+      endColumn: 8,
+      word: 'w',
+    })
+    const position = createMockPosition(1, 8)
+    
+    const result = (completionProvider as { provideCompletionItems: (model: unknown, position: unknown) => { suggestions: { kind: string; label: string }[] } }).provideCompletionItems(model, position)
+    
+    const valueSuggestions = result.suggestions.filter(
+      (s: { kind: string; label: string }) => s.kind === 'Value'
+    )
+    expect(valueSuggestions.length).toBe(1)
+    expect(valueSuggestions.some((s: { kind: string; label: string }) => s.label === 'warning')).toBe(true)
+    expect(valueSuggestions.some((s: { kind: string; label: string }) => s.label === 'info')).toBe(false)
+  })
+
+  it('should provide all value completions when just after colon', () => {
+    const model = createMockModel('level:')
+    model.getWordUntilPosition = vi.fn().mockReturnValue({
+      startColumn: 7,
+      endColumn: 7,
+      word: '',
+    })
+    const position = createMockPosition(1, 7)
+    
+    const result = (completionProvider as { provideCompletionItems: (model: unknown, position: unknown) => { suggestions: { kind: string; label: string }[] } }).provideCompletionItems(model, position)
+    
+    const valueSuggestions = result.suggestions.filter(
+      (s: { kind: string; label: string }) => s.kind === 'Value'
+    )
+    expect(valueSuggestions.length).toBe(3)
+    expect(valueSuggestions.some((s: { kind: string; label: string }) => s.label === 'warning')).toBe(true)
+    expect(valueSuggestions.some((s: { kind: string; label: string }) => s.label === 'info')).toBe(true)
+    expect(valueSuggestions.some((s: { kind: string; label: string }) => s.label === 'error')).toBe(true)
   })
 })
