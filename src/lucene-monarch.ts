@@ -154,4 +154,216 @@ export function registerLuceneLanguage(monaco: typeof import('monaco-editor')) {
       { open: '"', close: '"' }
     ]
   });
+  
+  // Register completion item provider
+  monaco.languages.registerCompletionItemProvider('lucene', {
+    provideCompletionItems: (model, position) => {
+      const word = model.getWordUntilPosition(position);
+      const lineText = model.getLineContent(position.lineNumber);
+      const textBeforeCursor = lineText.substring(0, position.column - 1);
+      
+      const range = {
+        startLineNumber: position.lineNumber,
+        endLineNumber: position.lineNumber,
+        startColumn: word.startColumn,
+        endColumn: word.endColumn,
+      };
+
+      const suggestions: monaco.languages.CompletionItem[] = [];
+
+      // Check context for smart suggestions
+      const isAfterColon = textBeforeCursor.match(/\w+:$/);
+      const isInRange = textBeforeCursor.match(/[[{][^}\]]*$/);
+      const isAfterOperator = textBeforeCursor.match(/\b(AND|OR|NOT|&&|\|\||!|\+|-)\s*$/);
+      const isAtStart = textBeforeCursor.trim() === '' || isAfterOperator;
+
+      // Field name suggestions
+      if (isAtStart || isAfterOperator) {
+        const fieldNames = [
+          'title', 'author', 'content', 'text', 'date', 'category', 
+          'status', 'priority', 'score', 'name', 'description', 'tags'
+        ];
+        
+        fieldNames.forEach(field => {
+          suggestions.push({
+            label: field,
+            kind: monaco.languages.CompletionItemKind.Field,
+            insertText: field + ':',
+            documentation: `Search in ${field} field`,
+            range: range,
+          });
+        });
+      }
+
+      // Operator suggestions
+      if (!isInRange) {
+        const operators = [
+          { label: 'AND', doc: 'Boolean AND operator' },
+          { label: 'OR', doc: 'Boolean OR operator' },
+          { label: 'NOT', doc: 'Boolean NOT operator' },
+          { label: '&&', doc: 'Boolean AND operator (alternative)' },
+          { label: '||', doc: 'Boolean OR operator (alternative)' },
+          { label: '!', doc: 'Boolean NOT operator (alternative)' },
+          { label: '+', doc: 'Required term' },
+          { label: '-', doc: 'Prohibited term' }
+        ];
+        
+        operators.forEach(op => {
+          suggestions.push({
+            label: op.label,
+            kind: monaco.languages.CompletionItemKind.Operator,
+            insertText: op.label + ' ',
+            documentation: op.doc,
+            range: range,
+          });
+        });
+      }
+
+      // Range query TO keyword
+      if (isInRange) {
+        suggestions.push({
+          label: 'TO',
+          kind: monaco.languages.CompletionItemKind.Keyword,
+          insertText: 'TO ',
+          documentation: 'Range query separator',
+          range: range,
+        });
+      }
+
+      // Special search patterns
+      if (isAfterColon || isAtStart) {
+        // Wildcard patterns
+        suggestions.push({
+          label: '*',
+          kind: monaco.languages.CompletionItemKind.Text,
+          insertText: '*',
+          documentation: 'Wildcard - matches any sequence of characters',
+          range: range,
+        });
+
+        suggestions.push({
+          label: '?',
+          kind: monaco.languages.CompletionItemKind.Text,
+          insertText: '?',
+          documentation: 'Wildcard - matches any single character',
+          range: range,
+        });
+
+        // Fuzzy search
+        suggestions.push({
+          label: 'fuzzy search',
+          kind: monaco.languages.CompletionItemKind.Snippet,
+          insertText: '${1:term}~${2:distance}',
+          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+          documentation: 'Fuzzy search with optional edit distance',
+          range: range,
+        });
+
+        // Proximity search
+        suggestions.push({
+          label: 'proximity search',
+          kind: monaco.languages.CompletionItemKind.Snippet,
+          insertText: '"${1:phrase}"~${2:distance}',
+          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+          documentation: 'Proximity search - words within specified distance',
+          range: range,
+        });
+
+        // Boost query
+        suggestions.push({
+          label: 'boost query',
+          kind: monaco.languages.CompletionItemKind.Snippet,
+          insertText: '${1:term}^${2:boost}',
+          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+          documentation: 'Boost query - increase relevance score',
+          range: range,
+        });
+
+        // Range queries
+        suggestions.push({
+          label: 'range inclusive',
+          kind: monaco.languages.CompletionItemKind.Snippet,
+          insertText: '[${1:start} TO ${2:end}]',
+          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+          documentation: 'Inclusive range query',
+          range: range,
+        });
+
+        suggestions.push({
+          label: 'range exclusive',
+          kind: monaco.languages.CompletionItemKind.Snippet,
+          insertText: '{${1:start} TO ${2:end}}',
+          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+          documentation: 'Exclusive range query',
+          range: range,
+        });
+
+        // Regular expression
+        suggestions.push({
+          label: 'regex',
+          kind: monaco.languages.CompletionItemKind.Snippet,
+          insertText: '/${1:pattern}/',
+          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+          documentation: 'Regular expression search',
+          range: range,
+        });
+      }
+
+      // Grouping patterns
+      if (isAtStart || isAfterOperator) {
+        suggestions.push({
+          label: 'group query',
+          kind: monaco.languages.CompletionItemKind.Snippet,
+          insertText: '(${1:query1} OR ${2:query2})',
+          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+          documentation: 'Group queries with parentheses',
+          range: range,
+        });
+
+        suggestions.push({
+          label: 'field group',
+          kind: monaco.languages.CompletionItemKind.Snippet,
+          insertText: '${1:field}:(${2:term1} ${3:term2})',
+          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+          documentation: 'Group multiple terms for a field',
+          range: range,
+        });
+      }
+
+      // Escape characters
+      const escapeChars = [
+        { char: '\\+', doc: 'Escape plus sign' },
+        { char: '\\-', doc: 'Escape minus sign' },
+        { char: '\\&', doc: 'Escape ampersand' },
+        { char: '\\|', doc: 'Escape pipe' },
+        { char: '\\!', doc: 'Escape exclamation' },
+        { char: '\\(', doc: 'Escape left parenthesis' },
+        { char: '\\)', doc: 'Escape right parenthesis' },
+        { char: '\\{', doc: 'Escape left brace' },
+        { char: '\\}', doc: 'Escape right brace' },
+        { char: '\\[', doc: 'Escape left bracket' },
+        { char: '\\]', doc: 'Escape right bracket' },
+        { char: '\\^', doc: 'Escape caret' },
+        { char: '\\"', doc: 'Escape quote' },
+        { char: '\\~', doc: 'Escape tilde' },
+        { char: '\\*', doc: 'Escape asterisk' },
+        { char: '\\?', doc: 'Escape question mark' },
+        { char: '\\:', doc: 'Escape colon' },
+        { char: '\\\\', doc: 'Escape backslash' },
+        { char: '\\/', doc: 'Escape forward slash' }
+      ];
+
+      escapeChars.forEach(esc => {
+        suggestions.push({
+          label: esc.char,
+          kind: monaco.languages.CompletionItemKind.Text,
+          insertText: esc.char,
+          documentation: esc.doc,
+          range: range,
+        });
+      });
+
+      return { suggestions };
+    }
+  });
 }
