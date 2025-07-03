@@ -36,16 +36,16 @@ The implementation supports comprehensive Lucene query syntax including:
 
 ```bash
 # Start development server
-npm run dev
+pnpm dev
 
 # Build for production
-npm run build
+pnpm build
 
 # Run linting
-npm run lint
+pnpm lint
 
 # Preview production build
-npm run preview
+pnpm preview
 ```
 
 ## Technical Notes
@@ -85,8 +85,8 @@ The app includes comprehensive example queries that demonstrate all supported Lu
 
 ### Testing Guidelines
 
-- Do not use `npm run dev` for testing
+- Do not use `pnpm dev` for testing
 - Always test using:
-  - Build process
-  - Linting checks
-  - Type checking
+  - Build process: `pnpm build`
+  - Linting checks: `pnpm lint`
+  - Test suite: `pnpm test`

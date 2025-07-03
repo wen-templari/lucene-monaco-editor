@@ -47,23 +47,23 @@ Completions are triggered by:
 ## Installation
 
 ```bash
-npm install
+pnpm install
 ```
 
 ## Development
 
 ```bash
 # Start development server
-npm run dev
+pnpm dev
 
 # Build for production
-npm run build
+pnpm build
 
 # Run tests
-npm test
+pnpm test
 
 # Run linting
-npm run lint
+pnpm lint
 ```
 
 ## Usage
@@ -153,7 +153,7 @@ The project includes comprehensive tests covering:
 
 Run tests with:
 ```bash
-npm test
+pnpm test
 ```
 
 ## TypeScript Configuration
@@ -167,9 +167,9 @@ Multi-configuration setup:
 
 When making changes:
 
-1. Ensure all tests pass: `npm test`
-2. Run linting: `npm run lint`
-3. Build successfully: `npm run build`
+1. Ensure all tests pass: `pnpm test`
+2. Run linting: `pnpm lint`
+3. Build successfully: `pnpm build`
 4. Follow existing code patterns and TypeScript conventions
 
 ## License
