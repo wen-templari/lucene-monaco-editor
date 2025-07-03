@@ -82,3 +82,11 @@ When making changes to the Lucene language definition, ensure:
 ### Testing the Implementation
 
 The app includes comprehensive example queries that demonstrate all supported Lucene syntax features. When testing changes, verify that all syntax elements are properly highlighted according to the defined theme colors.
+
+### Testing Guidelines
+
+- Do not use `npm run dev` for testing
+- Always test using:
+  - Build process
+  - Linting checks
+  - Type checking

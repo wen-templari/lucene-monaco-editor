@@ -176,7 +176,7 @@ export function registerLuceneLanguage(monaco: typeof import('monaco-editor'), f
   
   // Register new completion provider with current schema
   completionProviderDisposable = monaco.languages.registerCompletionItemProvider('lucene', {
-    triggerCharacters: [':', ' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'],
+    triggerCharacters: [':', ' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '_', '-', '.'],
     provideCompletionItems: (model, position) => {
       const word = model.getWordUntilPosition(position);
       const lineText = model.getLineContent(position.lineNumber);
@@ -214,7 +214,7 @@ export function registerLuceneLanguage(monaco: typeof import('monaco-editor'), f
         };
       }
 
-      const suggestions: monaco.languages.CompletionItem[] = [];
+      const suggestions: languages.CompletionItem[] = [];
 
       // Check if we're typing after a field colon for field-specific value suggestions
       if (isTypingAfterColon && fieldSchema) {

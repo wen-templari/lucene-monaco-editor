@@ -1,69 +1,177 @@
-# React + TypeScript + Vite
+# Lucene Monaco Editor
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React-based Monaco Editor implementation with custom Lucene query syntax highlighting and intelligent completion support.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Complete Lucene Syntax Support**: Full syntax highlighting for Apache Lucene search queries
+- **Intelligent Completion**: Smart autocompletion with configurable field schemas
+- **Real-time Validation**: Live syntax validation as you type
+- **Dark Theme**: Optimized dark theme with distinct colors for different token types
+- **TypeScript Support**: Full TypeScript integration with type safety
 
-## Expanding the ESLint configuration
+## Lucene Syntax Highlighting
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+The editor provides comprehensive syntax highlighting for:
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- **Field queries**: `field:value`
+- **Boolean operators**: `AND`, `OR`, `NOT`, `&&`, `||`, `!`
+- **Range queries**: `[a TO b]` (inclusive) and `{a TO b}` (exclusive)
+- **Wildcard searches**: `*` (multiple characters), `?` (single character)
+- **Fuzzy search**: `term~0.8` (with similarity)
+- **Proximity search**: `"phrase"~10` (words within distance)
+- **Boost queries**: `term^2.5` (relevance boosting)
+- **Regular expressions**: `/pattern/`
+- **Date formats**: ISO 8601 date recognition
+- **Escaped characters**: `\+`, `\-`, `\*`, etc.
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+## Intelligent Completion
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+The completion system provides:
+
+- **Field Name Suggestions**: Both default and custom field names
+- **Field Value Suggestions**: Configurable values for specific fields
+- **Operator Completions**: Boolean and special operators
+- **Query Snippets**: Pre-built patterns for complex queries
+- **Context-Aware Suggestions**: Different completions based on cursor position
+- **Continuous Completion**: Completions trigger while typing after field colons
+
+### Completion Triggers
+
+Completions are triggered by:
+- Typing `:` after a field name
+- Any alphanumeric character (a-z, A-Z, 0-9)
+- Special characters: `_`, `-`, `.`
+- Space character for operator suggestions
+
+## Installation
+
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Development
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```bash
+# Start development server
+npm run dev
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Build for production
+npm run build
+
+# Run tests
+npm test
+
+# Run linting
+npm run lint
 ```
+
+## Usage
+
+### Basic Usage
+
+```typescript
+import { registerLuceneLanguage } from './lucene-monarch'
+import { Editor } from '@monaco-editor/react'
+
+function App() {
+  const handleEditorDidMount = (editor: any, monaco: any) => {
+    registerLuceneLanguage(monaco)
+  }
+
+  return (
+    <Editor
+      height="400px"
+      defaultLanguage="lucene"
+      defaultValue="title:example AND status:active"
+      theme="lucene-theme"
+      onMount={handleEditorDidMount}
+    />
+  )
+}
+```
+
+### With Custom Field Schema
+
+```typescript
+const fieldSchema = [
+  { key: 'level', values: ['info', 'warning', 'error'] },
+  { key: 'category', values: ['frontend', 'backend', 'database'] }
+]
+
+const handleEditorDidMount = (editor: any, monaco: any) => {
+  registerLuceneLanguage(monaco, fieldSchema)
+}
+```
+
+## Field Schema Configuration
+
+Define custom fields and their possible values:
+
+```typescript
+interface FieldSchema {
+  key: string      // Field name
+  values: string[] // Possible values for this field
+}
+```
+
+Example queries with schema:
+- `level:info` - Shows completion for 'info', 'warning', 'error'
+- `category:front` - Shows filtered completion for 'frontend'
+
+## Architecture
+
+### Core Components
+
+- **`lucene-monarch.ts`**: Main language definition and completion provider
+- **`App.tsx`**: React component integrating Monaco with Lucene language
+- **`FieldSchemaEditor.tsx`**: UI for configuring field schemas
+
+### Language Definition
+
+The Monaco Monarch tokenizer handles:
+- Stateful parsing for range queries
+- Context-sensitive token recognition
+- Proper bracket matching and nesting
+
+### Completion Provider
+
+Features intelligent completion with:
+- Context detection (after colon, in range, etc.)
+- Field-specific value filtering
+- Priority-based suggestion ordering
+- Snippet-based complex query patterns
+
+## Testing
+
+The project includes comprehensive tests covering:
+- Language definition structure
+- Theme configuration
+- Completion provider functionality
+- Custom field schema integration
+- All completion trigger scenarios
+
+Run tests with:
+```bash
+npm test
+```
+
+## TypeScript Configuration
+
+Multi-configuration setup:
+- `tsconfig.json`: Root configuration
+- `tsconfig.app.json`: Application-specific settings
+- `tsconfig.node.json`: Node/Vite configuration
+
+## Contributing
+
+When making changes:
+
+1. Ensure all tests pass: `npm test`
+2. Run linting: `npm run lint`
+3. Build successfully: `npm run build`
+4. Follow existing code patterns and TypeScript conventions
+
+## License
+
+MIT

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { luceneLanguageDefinition, luceneTheme, registerLuceneLanguage, type FieldSchema } from './lucene-monarch'
 
 // Mock Monaco Editor
@@ -23,6 +23,18 @@ const mockMonaco = {
   editor: {
     defineTheme: vi.fn(),
   },
+  // Add missing properties to satisfy type checking
+  Emitter: vi.fn(),
+  MarkerTag: {},
+  MarkerSeverity: {},
+  CancellationTokenSource: vi.fn(),
+  CancellationToken: {},
+  Position: vi.fn(),
+  Range: vi.fn(),
+  Selection: vi.fn(),
+  SelectionDirection: {},
+  KeyCode: {},
+  KeyMod: {},
 }
 
 describe('luceneLanguageDefinition', () => {
@@ -84,7 +96,7 @@ describe('luceneTheme', () => {
 
 describe('registerLuceneLanguage', () => {
   it('should register language with Monaco', () => {
-    registerLuceneLanguage(mockMonaco as typeof import('monaco-editor'))
+    registerLuceneLanguage(mockMonaco as any)
     
     expect(mockMonaco.languages.register).toHaveBeenCalledWith({ id: 'lucene' })
     expect(mockMonaco.languages.setMonarchTokensProvider).toHaveBeenCalledWith(
@@ -97,7 +109,7 @@ describe('registerLuceneLanguage', () => {
   })
 
   it('should register completion provider', () => {
-    registerLuceneLanguage(mockMonaco as typeof import('monaco-editor'))
+    registerLuceneLanguage(mockMonaco as any)
     
     const completionCall = mockMonaco.languages.registerCompletionItemProvider.mock.calls[0]
     expect(completionCall[0]).toBe('lucene')
@@ -111,7 +123,7 @@ describe('Completion Provider', () => {
 
   beforeEach(() => {
     mockMonaco.languages.registerCompletionItemProvider.mockClear()
-    registerLuceneLanguage(mockMonaco as typeof import('monaco-editor'))
+    registerLuceneLanguage(mockMonaco as any)
     completionProvider = mockMonaco.languages.registerCompletionItemProvider.mock.calls[0][1]
   })
 
@@ -133,7 +145,7 @@ describe('Completion Provider', () => {
     const model = createMockModel('')
     const position = createMockPosition(1, 1)
     
-    const result = completionProvider.provideCompletionItems(model, position)
+    const result = (completionProvider as any).provideCompletionItems(model, position)
     
     expect(result.suggestions).toBeDefined()
     const fieldSuggestions = result.suggestions.filter(
@@ -148,7 +160,7 @@ describe('Completion Provider', () => {
     const model = createMockModel('title:test ')
     const position = createMockPosition(1, 12)
     
-    const result = completionProvider.provideCompletionItems(model, position)
+    const result = (completionProvider as any).provideCompletionItems(model, position)
     
     const operatorSuggestions = result.suggestions.filter(
       (s: { kind: string; label: string }) => s.kind === 'Operator'
@@ -163,7 +175,7 @@ describe('Completion Provider', () => {
     const model = createMockModel('date:[2023 ')
     const position = createMockPosition(1, 12)
     
-    const result = completionProvider.provideCompletionItems(model, position)
+    const result = (completionProvider as any).provideCompletionItems(model, position)
     
     const toSuggestions = result.suggestions.filter(
       (s: { kind: string; label: string }) => s.label === 'TO'
@@ -176,7 +188,7 @@ describe('Completion Provider', () => {
     const model = createMockModel('title:')
     const position = createMockPosition(1, 7)
     
-    const result = completionProvider.provideCompletionItems(model, position)
+    const result = (completionProvider as any).provideCompletionItems(model, position)
     
     const snippetSuggestions = result.suggestions.filter(
       (s: { kind: string; label: string }) => s.kind === 'Snippet'
@@ -191,7 +203,7 @@ describe('Completion Provider', () => {
     const model = createMockModel('title:')
     const position = createMockPosition(1, 7)
     
-    const result = completionProvider.provideCompletionItems(model, position)
+    const result = (completionProvider as any).provideCompletionItems(model, position)
     
     const escapeSuggestions = result.suggestions.filter(
       (s: { kind: string; label: string }) => s.label.startsWith('\\')
@@ -206,7 +218,7 @@ describe('Completion Provider', () => {
     const model = createMockModel('title:')
     const position = createMockPosition(1, 7)
     
-    const result = completionProvider.provideCompletionItems(model, position)
+    const result = (completionProvider as any).provideCompletionItems(model, position)
     
     const wildcardSuggestions = result.suggestions.filter(
       (s: { kind: string; label: string }) => s.label === '*' || s.label === '?'
@@ -227,7 +239,7 @@ describe('Custom Field Schema Completion', () => {
 
   beforeEach(() => {
     mockMonaco.languages.registerCompletionItemProvider.mockClear()
-    registerLuceneLanguage(mockMonaco as typeof import('monaco-editor'), testFieldSchema)
+    registerLuceneLanguage(mockMonaco as any, testFieldSchema)
     completionProvider = mockMonaco.languages.registerCompletionItemProvider.mock.calls[0][1]
   })
 
@@ -249,7 +261,7 @@ describe('Custom Field Schema Completion', () => {
     const model = createMockModel('')
     const position = createMockPosition(1, 1)
     
-    const result = (completionProvider as { provideCompletionItems: (model: unknown, position: unknown) => { suggestions: { kind: string; label: string }[] } }).provideCompletionItems(model, position)
+    const result = (completionProvider as any).provideCompletionItems(model, position)
     
     const fieldSuggestions = result.suggestions.filter(
       (s: { kind: string; label: string }) => s.kind === 'Field'
@@ -262,7 +274,7 @@ describe('Custom Field Schema Completion', () => {
     const model = createMockModel('level:')
     const position = createMockPosition(1, 7)
     
-    const result = (completionProvider as { provideCompletionItems: (model: unknown, position: unknown) => { suggestions: { kind: string; label: string }[] } }).provideCompletionItems(model, position)
+    const result = (completionProvider as any).provideCompletionItems(model, position)
     
     const valueSuggestions = result.suggestions.filter(
       (s: { kind: string; label: string }) => s.kind === 'Value'
@@ -277,7 +289,7 @@ describe('Custom Field Schema Completion', () => {
     const model = createMockModel('location:')
     const position = createMockPosition(1, 10)
     
-    const result = (completionProvider as { provideCompletionItems: (model: unknown, position: unknown) => { suggestions: { kind: string; label: string }[] } }).provideCompletionItems(model, position)
+    const result = (completionProvider as any).provideCompletionItems(model, position)
     
     const valueSuggestions = result.suggestions.filter(
       (s: { kind: string; label: string }) => s.kind === 'Value'
@@ -291,7 +303,7 @@ describe('Custom Field Schema Completion', () => {
     const model = createMockModel('level:')
     const position = createMockPosition(1, 7)
     
-    const result = (completionProvider as { provideCompletionItems: (model: unknown, position: unknown) => { suggestions: { kind: string; label: string }[] } }).provideCompletionItems(model, position)
+    const result = (completionProvider as any).provideCompletionItems(model, position)
     
     // Should only show field values, not operators or other completions
     expect(result.suggestions.every((s: { kind: string; label: string }) => s.kind === 'Value')).toBe(true)
@@ -302,7 +314,7 @@ describe('Custom Field Schema Completion', () => {
     const model = createMockModel('unknown:')
     const position = createMockPosition(1, 9)
     
-    const result = (completionProvider as { provideCompletionItems: (model: unknown, position: unknown) => { suggestions: { kind: string; label: string }[] } }).provideCompletionItems(model, position)
+    const result = (completionProvider as any).provideCompletionItems(model, position)
     
     // Should provide general completions since 'unknown' is not in schema
     expect(result.suggestions.length).toBeGreaterThan(3)
@@ -318,7 +330,7 @@ describe('Custom Field Schema Completion', () => {
     })
     const position = createMockPosition(1, 4)
     
-    const result = (completionProvider as { provideCompletionItems: (model: unknown, position: unknown) => { suggestions: { kind: string; label: string }[] } }).provideCompletionItems(model, position)
+    const result = (completionProvider as any).provideCompletionItems(model, position)
     
     const fieldSuggestions = result.suggestions.filter(
       (s: { kind: string; label: string }) => s.kind === 'Field'
@@ -335,7 +347,7 @@ describe('Custom Field Schema Completion', () => {
     })
     const position = createMockPosition(1, 2)
     
-    const result = (completionProvider as { provideCompletionItems: (model: unknown, position: unknown) => { suggestions: { kind: string; label: string; sortText?: string }[] } }).provideCompletionItems(model, position)
+    const result = (completionProvider as any).provideCompletionItems(model, position)
     
     const fieldSuggestions = result.suggestions.filter(
       (s: { kind: string; label: string }) => s.kind === 'Field'
@@ -356,7 +368,7 @@ describe('Custom Field Schema Completion', () => {
     })
     const position = createMockPosition(1, 4)
     
-    const result = (completionProvider as { provideCompletionItems: (model: unknown, position: unknown) => { suggestions: { kind: string; label: string; documentation?: string }[] } }).provideCompletionItems(model, position)
+    const result = (completionProvider as any).provideCompletionItems(model, position)
     
     const levelSuggestion = result.suggestions.find(
       (s: { kind: string; label: string }) => s.kind === 'Field' && s.label === 'level'
@@ -374,7 +386,7 @@ describe('Custom Field Schema Completion', () => {
     })
     const position = createMockPosition(1, 8)
     
-    const result = (completionProvider as { provideCompletionItems: (model: unknown, position: unknown) => { suggestions: { kind: string; label: string }[] } }).provideCompletionItems(model, position)
+    const result = (completionProvider as any).provideCompletionItems(model, position)
     
     const valueSuggestions = result.suggestions.filter(
       (s: { kind: string; label: string }) => s.kind === 'Value'
@@ -393,7 +405,7 @@ describe('Custom Field Schema Completion', () => {
     })
     const position = createMockPosition(1, 7)
     
-    const result = (completionProvider as { provideCompletionItems: (model: unknown, position: unknown) => { suggestions: { kind: string; label: string }[] } }).provideCompletionItems(model, position)
+    const result = (completionProvider as any).provideCompletionItems(model, position)
     
     const valueSuggestions = result.suggestions.filter(
       (s: { kind: string; label: string }) => s.kind === 'Value'
