@@ -1,0 +1,94 @@
+{
+  "name": "lucene-language-support",
+  "displayName": "Lucene Language Support",
+  "description": "Language support for Apache Lucene query syntax with IntelliSense and syntax highlighting",
+  "version": "1.0.0",
+  "publisher": "lucene-tools",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Snippets",
+    "Other"
+  ],
+  "keywords": [
+    "lucene",
+    "search",
+    "query",
+    "apache",
+    "elasticsearch",
+    "solr"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "lucene",
+        "aliases": [
+          "Lucene",
+          "lucene"
+        ],
+        "extensions": [
+          ".lucene",
+          ".lql"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "lucene",
+        "scopeName": "source.lucene",
+        "path": "./syntaxes/lucene.tmLanguage.json"
+      }
+    ],
+    "configuration": {
+      "title": "Lucene Language Support",
+      "properties": {
+        "lucene.fieldSchema": {
+          "type": "array",
+          "default": [],
+          "description": "Field schema for completion suggestions",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "description": "Field name"
+              },
+              "values": {
+                "type": "array",
+                "description": "Possible field values",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "activationEvents": [
+    "onLanguage:lucene"
+  ],
+  "scripts": {
+    "build": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "@lucene-tools/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@vscode/test-electron": "^2.3.8",
+    "@vscode/vsce": "^2.22.0",
+    "typescript": "~5.8.3",
+    "eslint": "^9.29.0"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "name": "@lucene-tools/core",
+  "version": "1.0.0",
+  "description": "Core Lucene language parsing and validation logic",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist/**/*"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "lint": "eslint src --ext .ts"
+  },
+  "devDependencies": {
+    "typescript": "~5.8.3",
+    "vitest": "^3.2.4",
+    "eslint": "^9.29.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "name": "@lucene-tools/monaco-language",
+  "version": "1.0.0",
+  "description": "Monaco Editor language support for Lucene queries",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist/**/*"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "@lucene-tools/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "monaco-editor": "^0.52.0"
+  },
+  "devDependencies": {
+    "monaco-editor": "^0.52.2",
+    "typescript": "~5.8.3",
+    "vitest": "^3.2.4",
+    "eslint": "^9.29.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

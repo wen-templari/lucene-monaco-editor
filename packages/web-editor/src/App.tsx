@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import Editor from '@monaco-editor/react'
-import { registerLuceneLanguage, type FieldSchema } from './lucene-monarch'
+import { registerLuceneLanguage, type FieldSchema } from '@lucene-tools/monaco-language'
 import FieldSchemaEditor from './FieldSchemaEditor'
 import { useTheme } from './ThemeContext'
 import './App.css'

@@ -1,177 +1,159 @@
-# Lucene Monaco Editor
+# Lucene Language Tools
 
-A React-based Monaco Editor implementation with custom Lucene query syntax highlighting and intelligent completion support.
+A monorepo containing tools and libraries for Apache Lucene query language support across multiple platforms.
 
-## Features
+## 📦 Packages
 
-- **Complete Lucene Syntax Support**: Full syntax highlighting for Apache Lucene search queries
-- **Intelligent Completion**: Smart autocompletion with configurable field schemas
-- **Real-time Validation**: Live syntax validation as you type
-- **Dark Theme**: Optimized dark theme with distinct colors for different token types
-- **TypeScript Support**: Full TypeScript integration with type safety
+### `@lucene-tools/core`
+Platform-agnostic core library providing:
+- Lucene query tokenization and parsing
+- Syntax tree analysis
+- Completion suggestion generation
+- Field schema validation
 
-## Lucene Syntax Highlighting
+### `@lucene-tools/monaco-language`
+Monaco Editor integration providing:
+- Syntax highlighting with Monarch tokenizer
+- Light and dark themes
+- Intelligent auto-completion
+- Context-aware suggestions
 
-The editor provides comprehensive syntax highlighting for:
+### `@lucene-tools/web-editor`
+React web application featuring:
+- Monaco-based Lucene query editor
+- Real-time syntax highlighting
+- Configurable field schemas
+- Responsive design with Tailwind CSS
 
-- **Field queries**: `field:value`
-- **Boolean operators**: `AND`, `OR`, `NOT`, `&&`, `||`, `!`
-- **Range queries**: `[a TO b]` (inclusive) and `{a TO b}` (exclusive)
-- **Wildcard searches**: `*` (multiple characters), `?` (single character)
-- **Fuzzy search**: `term~0.8` (with similarity)
-- **Proximity search**: `"phrase"~10` (words within distance)
-- **Boost queries**: `term^2.5` (relevance boosting)
-- **Regular expressions**: `/pattern/`
-- **Date formats**: ISO 8601 date recognition
-- **Escaped characters**: `\+`, `\-`, `\*`, etc.
+### `lucene-language-support` (VS Code Extension)
+VS Code extension providing:
+- Lucene syntax highlighting for `.lucene` files
+- IntelliSense completions
+- Configurable field schemas
+- Error detection and validation
 
-## Intelligent Completion
+## 🚀 Quick Start
 
-The completion system provides:
+### Prerequisites
+- Node.js 18+
+- pnpm 8+
 
-- **Field Name Suggestions**: Both default and custom field names
-- **Field Value Suggestions**: Configurable values for specific fields
-- **Operator Completions**: Boolean and special operators
-- **Query Snippets**: Pre-built patterns for complex queries
-- **Context-Aware Suggestions**: Different completions based on cursor position
-- **Continuous Completion**: Completions trigger while typing after field colons
-
-### Completion Triggers
-
-Completions are triggered by:
-- Typing `:` after a field name
-- Any alphanumeric character (a-z, A-Z, 0-9)
-- Special characters: `_`, `-`, `.`
-- Space character for operator suggestions
-
-## Installation
-
+### Installation
 ```bash
 pnpm install
 ```
 
-## Development
-
+### Development
 ```bash
-# Start development server
-pnpm dev
-
-# Build for production
+# Build all packages
 pnpm build
 
-# Run tests
+# Start web editor development server
+pnpm dev
+
+# Run tests across all packages
 pnpm test
 
-# Run linting
+# Lint all packages
 pnpm lint
 ```
 
-## Usage
+## 🏗️ Architecture
 
-### Basic Usage
-
-```typescript
-import { registerLuceneLanguage } from './lucene-monarch'
-import { Editor } from '@monaco-editor/react'
-
-function App() {
-  const handleEditorDidMount = (editor: any, monaco: any) => {
-    registerLuceneLanguage(monaco)
-  }
-
-  return (
-    <Editor
-      height="400px"
-      defaultLanguage="lucene"
-      defaultValue="title:example AND status:active"
-      theme="lucene-theme"
-      onMount={handleEditorDidMount}
-    />
-  )
-}
+```
+lucene-language-tools/
+├── packages/
+│   ├── core/                    # Platform-agnostic core logic
+│   ├── monaco-language/         # Monaco Editor integration
+│   ├── web-editor/              # React web application
+│   └── vscode-extension/        # VS Code extension
+├── package.json                 # Root workspace configuration
+└── pnpm-workspace.yaml         # pnpm workspace setup
 ```
 
-### With Custom Field Schema
+### Package Dependencies
+- `@lucene-tools/core` → No dependencies (pure TypeScript)
+- `@lucene-tools/monaco-language` → Depends on core + Monaco Editor
+- `@lucene-tools/web-editor` → Depends on monaco-language + React
+- `lucene-language-support` → Depends on core + VS Code API
 
-```typescript
-const fieldSchema = [
-  { key: 'level', values: ['info', 'warning', 'error'] },
-  { key: 'category', values: ['frontend', 'backend', 'database'] }
-]
+## 🛠️ Development
 
-const handleEditorDidMount = (editor: any, monaco: any) => {
-  registerLuceneLanguage(monaco, fieldSchema)
-}
-```
-
-## Field Schema Configuration
-
-Define custom fields and their possible values:
-
-```typescript
-interface FieldSchema {
-  key: string      // Field name
-  values: string[] // Possible values for this field
-}
-```
-
-Example queries with schema:
-- `level:info` - Shows completion for 'info', 'warning', 'error'
-- `category:front` - Shows filtered completion for 'frontend'
-
-## Architecture
-
-### Core Components
-
-- **`lucene-monarch.ts`**: Main language definition and completion provider
-- **`App.tsx`**: React component integrating Monaco with Lucene language
-- **`FieldSchemaEditor.tsx`**: UI for configuring field schemas
-
-### Language Definition
-
-The Monaco Monarch tokenizer handles:
-- Stateful parsing for range queries
-- Context-sensitive token recognition
-- Proper bracket matching and nesting
-
-### Completion Provider
-
-Features intelligent completion with:
-- Context detection (after colon, in range, etc.)
-- Field-specific value filtering
-- Priority-based suggestion ordering
-- Snippet-based complex query patterns
-
-## Testing
-
-The project includes comprehensive tests covering:
-- Language definition structure
-- Theme configuration
-- Completion provider functionality
-- Custom field schema integration
-- All completion trigger scenarios
-
-Run tests with:
+### Adding Dependencies
 ```bash
-pnpm test
+# Add to specific package
+pnpm --filter @lucene-tools/core add <dependency>
+
+# Add to root workspace
+pnpm add -w <dependency>
 ```
 
-## TypeScript Configuration
+### Building Packages
+```bash
+# Build all packages
+pnpm -r build
 
-Multi-configuration setup:
-- `tsconfig.json`: Root configuration
-- `tsconfig.app.json`: Application-specific settings
-- `tsconfig.node.json`: Node/Vite configuration
+# Build specific package
+pnpm --filter @lucene-tools/core build
+```
 
-## Contributing
+### Testing
+```bash
+# Test all packages
+pnpm -r test
 
-When making changes:
+# Test with coverage
+pnpm -r test:coverage
+```
 
-1. Ensure all tests pass: `pnpm test`
-2. Run linting: `pnpm lint`
-3. Build successfully: `pnpm build`
-4. Follow existing code patterns and TypeScript conventions
+## 📝 Features
 
-## License
+### Lucene Syntax Support
+- **Field queries**: `field:value`, `"quoted field":value`
+- **Comparison operators**: `>`, `>=`, `<`, `<=`, `=`
+- **Boolean operators**: `AND`, `OR`, `NOT`, `&&`, `||`, `!`
+- **Range queries**: `[start TO end]`, `{start TO end}`
+- **Unbounded ranges**: `[value TO *]`, `[* TO value]`
+- **Wildcard searches**: `*`, `?`
+- **Fuzzy search**: `term~0.8`
+- **Proximity search**: `"phrase"~10`
+- **Boost queries**: `term^2.5`
+- **Regular expressions**: `/pattern/`
+- **Date formats**: ISO 8601, US format
+- **Escaped characters**: `\\`, `\+`, `\-`, etc.
 
-MIT
+### Smart Completions
+- Context-aware field suggestions
+- Field-specific value completions
+- Operator and keyword suggestions
+- Snippet completions for complex patterns
+- Configurable field schemas
+
+## 🎨 Themes
+
+Both light and dark themes with distinct colors for:
+- Field names (blue)
+- Keywords (purple)
+- Operators (various colors by type)
+- Strings and dates (orange/red)
+- Numbers (green)
+- Regular expressions (red)
+
+## 📄 License
+
+MIT License - see individual packages for details.
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Run `pnpm build` and `pnpm test`
+6. Submit a pull request
+
+## 🔗 Related Projects
+
+- [Apache Lucene](https://lucene.apache.org/)
+- [Monaco Editor](https://microsoft.github.io/monaco-editor/)
+- [VS Code Language Extensions](https://code.visualstudio.com/api/language-extensions/overview)
