@@ -6,34 +6,129 @@ import type { TokenInfo } from './types.js';
 export function tokenizeQuery(query: string): TokenInfo[] {
   const tokens: TokenInfo[] = [];
   
-  // Basic regex patterns for different token types
-  const patterns = [
-    { type: 'field' as const, regex: /[a-zA-Z_][a-zA-Z0-9_.-]*(?=[:><=])/ },
-    { type: 'operator' as const, regex: /\b(AND|OR|NOT|TO)\b|[+\-!&|><=~^]/ },
-    { type: 'range' as const, regex: /\[[^\]]*\]|\{[^}]*\}/ },
-    { type: 'group' as const, regex: /\([^)]*\)/ },
-    { type: 'value' as const, regex: /"[^"]*"|\S+/ }
-  ];
-  
   let pos = 0;
   while (pos < query.length) {
+    const char = query[pos];
+    
+    // Skip whitespace
+    if (/\s/.test(char)) {
+      pos++;
+      continue;
+    }
+    
     let matched = false;
     
-    for (const pattern of patterns) {
-      const regex = new RegExp(pattern.regex.source, 'g');
-      regex.lastIndex = pos;
-      const match = regex.exec(query);
-      
-      if (match && match.index === pos) {
+    // Try to match range queries first (highest priority)
+    if (char === '[' || char === '{') {
+      const closeChar = char === '[' ? ']' : '}';
+      const endPos = query.indexOf(closeChar, pos);
+      if (endPos !== -1) {
         tokens.push({
-          type: pattern.type,
-          value: match[0],
+          type: 'range',
+          value: query.substring(pos, endPos + 1),
           start: pos,
-          end: pos + match[0].length
+          end: endPos + 1
         });
-        pos += match[0].length;
+        pos = endPos + 1;
         matched = true;
-        break;
+      }
+    }
+    
+    // Try to match group queries
+    if (!matched && char === '(') {
+      const endPos = query.indexOf(')', pos);
+      if (endPos !== -1) {
+        tokens.push({
+          type: 'group',
+          value: query.substring(pos, endPos + 1),
+          start: pos,
+          end: endPos + 1
+        });
+        pos = endPos + 1;
+        matched = true;
+      }
+    }
+    
+    // Try to match quoted strings
+    if (!matched && char === '"') {
+      const endPos = query.indexOf('"', pos + 1);
+      if (endPos !== -1) {
+        tokens.push({
+          type: 'value',
+          value: query.substring(pos, endPos + 1),
+          start: pos,
+          end: endPos + 1
+        });
+        pos = endPos + 1;
+        matched = true;
+      }
+    }
+    
+    // Try to match field names (word followed by :, >, <, =, >=, <=)
+    if (!matched && /[a-zA-Z_]/.test(char)) {
+      const wordMatch = query.substring(pos).match(/^[a-zA-Z_][a-zA-Z0-9_.-]*/);
+      if (wordMatch) {
+        const nextPos = pos + wordMatch[0].length;
+        const nextChar = query[nextPos];
+        
+        // Check if it's followed by a field separator
+        if (nextChar === ':' || nextChar === '>' || nextChar === '<' || nextChar === '=') {
+          tokens.push({
+            type: 'field',
+            value: wordMatch[0],
+            start: pos,
+            end: nextPos
+          });
+          pos = nextPos;
+          matched = true;
+        }
+      }
+    }
+    
+    // Try to match operators and keywords
+    if (!matched) {
+      // Multi-character operators
+      if (pos + 1 < query.length) {
+        const twoChar = query.substring(pos, pos + 2);
+        if (['&&', '||', '>=', '<='].includes(twoChar)) {
+          tokens.push({
+            type: 'operator',
+            value: twoChar,
+            start: pos,
+            end: pos + 2
+          });
+          pos += 2;
+          matched = true;
+        }
+      }
+      
+      // Single character operators
+      if (!matched && /[+\-!&|><=~^:]/.test(char)) {
+        tokens.push({
+          type: 'operator',
+          value: char,
+          start: pos,
+          end: pos + 1
+        });
+        pos++;
+        matched = true;
+      }
+    }
+    
+    // Try to match keywords or regular values
+    if (!matched && /[a-zA-Z0-9]/.test(char)) {
+      const wordMatch = query.substring(pos).match(/^[a-zA-Z0-9_.-]+/);
+      if (wordMatch) {
+        const word = wordMatch[0];
+        const type = ['AND', 'OR', 'NOT', 'TO'].includes(word.toUpperCase()) ? 'operator' : 'value';
+        tokens.push({
+          type,
+          value: word,
+          start: pos,
+          end: pos + word.length
+        });
+        pos += word.length;
+        matched = true;
       }
     }
     

@@ -46,9 +46,9 @@ export function extractFieldContext(textBeforeCursor: string): {
   isAfterComparison: boolean;
 } {
   // Extract field name from "field:" or "field:value" or "field>value" pattern
-  const fieldMatch = textBeforeCursor.match(/(\w+)[:>=<](\w*)$/);
+  const fieldMatch = textBeforeCursor.match(/(\w+)([:>=<]+)(\w*)$/);
   const fieldName = fieldMatch ? fieldMatch[1] : null;
-  const currentValue = fieldMatch ? fieldMatch[2] : '';
+  const currentValue = fieldMatch ? fieldMatch[3] : '';
   
   const isAfterColon = /\w+:$/.test(textBeforeCursor);
   const isAfterComparison = /\w+(>=|<=|>|<|=)$/.test(textBeforeCursor);

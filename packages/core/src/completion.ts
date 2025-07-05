@@ -37,7 +37,7 @@ export function generateCompletions(
   }
   
   // Check if we're typing after a field colon or comparison operator for field-specific value suggestions
-  if ((fieldContext.isAfterColon || fieldContext.isAfterComparison) && fieldSchema) {
+  if ((fieldContext.isAfterColon || fieldContext.isAfterComparison || fieldContext.fieldName) && fieldSchema) {
     const schemaField = fieldSchema.find(f => f.key === fieldContext.fieldName);
     if (schemaField) {
       // Filter values based on what user is typing after colon
