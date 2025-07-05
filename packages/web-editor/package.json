@@ -16,6 +16,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@lucene-tools/core": "workspace:*",
     "@lucene-tools/monaco-language": "workspace:*",
     "@monaco-editor/react": "^4.7.0",
     "monaco-editor": "^0.52.2",

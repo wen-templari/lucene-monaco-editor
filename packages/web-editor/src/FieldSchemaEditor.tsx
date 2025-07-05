@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { FieldSchema } from './lucene-monarch'
+import type { FieldSchema } from '@lucene-tools/core'
 
 interface FieldSchemaEditorProps {
   fieldSchema: FieldSchema[]
