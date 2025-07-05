@@ -1,5 +1,5 @@
 import type { languages } from 'monaco-editor';
-import type { FieldSchema } from '@lucene-tools/core';
+import type { FieldSchema, CompletionSuggestion } from '@lucene-tools/core';
 import { parseQueryContext, generateCompletions } from '@lucene-tools/core';
 
 export function createCompletionProvider(
@@ -36,7 +36,7 @@ export function createCompletionProvider(
       );
 
       // Convert to Monaco format
-      const monacoSuggestions: languages.CompletionItem[] = coreSuggestions.map(suggestion => ({
+      const monacoSuggestions: languages.CompletionItem[] = coreSuggestions.map((suggestion: CompletionSuggestion) => ({
         label: suggestion.label,
         kind: getMonacoCompletionKind(monaco, suggestion.kind),
         insertText: suggestion.insertText,
