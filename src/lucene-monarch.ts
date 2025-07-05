@@ -5,6 +5,107 @@ export interface FieldSchema {
   values: string[];
 }
 
+// Simple syntax tree node types for context analysis
+interface SyntaxNode {
+  type: 'field' | 'operator' | 'value' | 'group' | 'range';
+  value: string;
+  position: { start: number; end: number };
+  children?: SyntaxNode[];
+}
+
+// Parse query into basic syntax tree for context-aware completions
+function parseQueryContext(query: string, cursorPos: number): {
+  currentNode: SyntaxNode | null;
+  parentNode: SyntaxNode | null;
+  isInField: boolean;
+  isInValue: boolean;
+  isInRange: boolean;
+  isInGroup: boolean;
+} {
+  const tokens = tokenizeQuery(query);
+  const currentNode: SyntaxNode | null = null;
+  const parentNode: SyntaxNode | null = null;
+  
+  // Find the token containing the cursor position
+  const cursorToken = tokens.find(token => 
+    cursorPos >= token.start && cursorPos <= token.end
+  );
+  
+  // Analyze context based on cursor position
+  const isInField = cursorToken?.type === 'field';
+  const isInValue = cursorToken?.type === 'value';
+  const isInRange = tokens.some(token => 
+    token.type === 'range' && 
+    cursorPos >= token.start && cursorPos <= token.end
+  );
+  const isInGroup = tokens.some(token => 
+    token.type === 'group' && 
+    cursorPos >= token.start && cursorPos <= token.end
+  );
+  
+  return {
+    currentNode,
+    parentNode,
+    isInField,
+    isInValue,
+    isInRange,
+    isInGroup
+  };
+}
+
+// Simple tokenizer for context analysis
+function tokenizeQuery(query: string): Array<{
+  type: 'field' | 'operator' | 'value' | 'range' | 'group';
+  value: string;
+  start: number;
+  end: number;
+}> {
+  const tokens: Array<{
+    type: 'field' | 'operator' | 'value' | 'range' | 'group';
+    value: string;
+    start: number;
+    end: number;
+  }> = [];
+  
+  // Basic regex patterns for different token types
+  const patterns = [
+    { type: 'field' as const, regex: /[a-zA-Z_][a-zA-Z0-9_.-]*(?=[:><=])/, },
+    { type: 'operator' as const, regex: /\b(AND|OR|NOT|TO)\b|[+\-!&|><=~^]/, },
+    { type: 'range' as const, regex: /\[[^\]]*\]|\{[^}]*\}/, },
+    { type: 'group' as const, regex: /\([^)]*\)/, },
+    { type: 'value' as const, regex: /"[^"]*"|\S+/, }
+  ];
+  
+  let pos = 0;
+  while (pos < query.length) {
+    let matched = false;
+    
+    for (const pattern of patterns) {
+      const regex = new RegExp(pattern.regex.source, 'g');
+      regex.lastIndex = pos;
+      const match = regex.exec(query);
+      
+      if (match && match.index === pos) {
+        tokens.push({
+          type: pattern.type,
+          value: match[0],
+          start: pos,
+          end: pos + match[0].length
+        });
+        pos += match[0].length;
+        matched = true;
+        break;
+      }
+    }
+    
+    if (!matched) {
+      pos++; // Skip unmatched characters
+    }
+  }
+  
+  return tokens;
+}
+
 export const luceneLanguageDefinition: languages.IMonarchLanguage = {
   defaultToken: '',
   ignoreCase: false,
@@ -14,7 +115,7 @@ export const luceneLanguageDefinition: languages.IMonarchLanguage = {
   ],
 
   operators: [
-    '+', '-', '~', '^', '?', '*', '&&', '||', '!'
+    '+', '-', '~', '^', '?', '*', '&&', '||', '!', '>', '>=', '<', '<=', '='
   ],
 
   brackets: [
@@ -28,9 +129,17 @@ export const luceneLanguageDefinition: languages.IMonarchLanguage = {
       // Regular expressions
       [/\/([^/\\]|\\.)*\//, 'regexp'],
       
-      // Field queries (field:value)
-      [/[a-zA-Z_][a-zA-Z0-9_.-]*(?=:)/, 'field'],
+      // Field queries (field:value or field>value, etc.) - supports quoted field names
+      [/"[^"]+"(?=[:><=])/, 'field.quoted'],
+      [/[a-zA-Z_][a-zA-Z0-9_.-]*(?=[:><=])/, 'field'],
       [/:/, 'delimiter.colon'],
+      
+      // Comparison operators
+      [/>=/, 'operator.comparison'],
+      [/<=/, 'operator.comparison'],
+      [/>/, 'operator.comparison'],
+      [/</, 'operator.comparison'],
+      [/=/, 'operator.comparison'],
       
       // Boolean operators (both forms)
       [/\b(AND|OR|NOT)\b/, 'keyword'],
@@ -50,6 +159,10 @@ export const luceneLanguageDefinition: languages.IMonarchLanguage = {
       [/\[/, { token: 'delimiter.square', next: '@rangeInclusive' }],
       [/\{/, { token: 'delimiter.curly', next: '@rangeExclusive' }],
       
+      // Unbounded range wildcards
+      [/\*(?=\s+(TO|\]|\}))/, 'operator.wildcard.range'],
+      [/(?<=(\[|\{|TO)\s+)\*/, 'operator.wildcard.range'],
+      
       // Fuzzy search with optional similarity
       [/~\d*\.?\d*/, 'operator.fuzzy'],
       
@@ -62,11 +175,13 @@ export const luceneLanguageDefinition: languages.IMonarchLanguage = {
       // Grouping parentheses
       [/[()]/, '@brackets'],
       
-      // Numbers (including decimals and scientific notation)
-      [/\d+\.?\d*([eE][+-]?\d+)?/, 'number'],
+      // Numbers (including decimals, scientific notation, and negative numbers)
+      [/-?\d+\.?\d*([eE][+-]?\d+)?/, 'number'],
       
-      // Date formats (common in Lucene)
-      [/\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2}))?/, 'date'],
+      // Date formats (common in Lucene) - enhanced to support more formats
+      [/\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{3})?(Z|[+-]\d{2}:\d{2})?)?/, 'date'],
+      [/\d{2}\/\d{2}\/\d{4}/, 'date'],
+      [/\d{4}\/\d{2}\/\d{2}/, 'date'],
       
       // Escaped characters
       [/\\[\\+!(){}[\]^"~*?:|&/-]/, 'string.escape'],
@@ -84,8 +199,9 @@ export const luceneLanguageDefinition: languages.IMonarchLanguage = {
     rangeInclusive: [
       [/\]/, { token: 'delimiter.square', next: '@pop' }],
       [/TO/, 'keyword.range'],
-      [/\d+\.?\d*([eE][+-]?\d+)?/, 'number'],
-      [/\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2}))?/, 'date'],
+      [/\*/, 'operator.wildcard.range'],
+      [/-?\d+\.?\d*([eE][+-]?\d+)?/, 'number'],
+      [/\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{3})?(Z|[+-]\d{2}:\d{2})?)?/, 'date'],
       [/[a-zA-Z_][a-zA-Z0-9_.-]*/, 'identifier'],
       [/\s+/, 'white'],
       [/./, 'text']
@@ -94,8 +210,9 @@ export const luceneLanguageDefinition: languages.IMonarchLanguage = {
     rangeExclusive: [
       [/\}/, { token: 'delimiter.curly', next: '@pop' }],
       [/TO/, 'keyword.range'],
-      [/\d+\.?\d*([eE][+-]?\d+)?/, 'number'],
-      [/\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2}))?/, 'date'],
+      [/\*/, 'operator.wildcard.range'],
+      [/-?\d+\.?\d*([eE][+-]?\d+)?/, 'number'],
+      [/\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{3})?(Z|[+-]\d{2}:\d{2})?)?/, 'date'],
       [/[a-zA-Z_][a-zA-Z0-9_.-]*/, 'identifier'],
       [/\s+/, 'white'],
       [/./, 'text']
@@ -108,12 +225,15 @@ export const luceneDarkTheme: editor.IStandaloneThemeData = {
   inherit: true,
   rules: [
     { token: 'field', foreground: '569CD6' },                    // Blue for field names
+    { token: 'field.quoted', foreground: '9CDCFE' },             // Light blue for quoted field names
     { token: 'keyword', foreground: 'C586C0', fontStyle: 'bold' }, // Purple for AND/OR/NOT
     { token: 'keyword.range', foreground: 'C586C0' },            // Purple for TO
     { token: 'operator', foreground: 'D4D4D4' },                 // Light gray for +/-
     { token: 'operator.fuzzy', foreground: 'DCDCAA' },          // Yellow for ~
     { token: 'operator.boost', foreground: 'B5CEA8' },          // Light green for ^
     { token: 'operator.wildcard', foreground: 'DCDCAA' },       // Yellow for *?
+    { token: 'operator.wildcard.range', foreground: 'DCDCAA' },  // Yellow for range wildcards
+    { token: 'operator.comparison', foreground: 'C586C0' },      // Purple for comparison operators
     { token: 'string', foreground: 'CE9178' },                  // Orange for quoted strings
     { token: 'string.proximity', foreground: 'CE9178' },        // Orange for proximity searches
     { token: 'string.escape', foreground: 'D7BA7D' },          // Light brown for escapes
@@ -134,12 +254,15 @@ export const luceneLightTheme: editor.IStandaloneThemeData = {
   inherit: true,
   rules: [
     { token: 'field', foreground: '0451A5' },                    // Darker blue for field names
+    { token: 'field.quoted', foreground: '0070C1' },             // Blue for quoted field names
     { token: 'keyword', foreground: 'AF00DB', fontStyle: 'bold' }, // Purple for AND/OR/NOT
     { token: 'keyword.range', foreground: 'AF00DB' },            // Purple for TO
     { token: 'operator', foreground: '2B2B2B' },                 // Dark gray for +/-
     { token: 'operator.fuzzy', foreground: '795E26' },          // Brown for ~
     { token: 'operator.boost', foreground: '008000' },          // Green for ^
     { token: 'operator.wildcard', foreground: '795E26' },       // Brown for *?
+    { token: 'operator.wildcard.range', foreground: '795E26' },  // Brown for range wildcards
+    { token: 'operator.comparison', foreground: 'AF00DB' },      // Purple for comparison operators
     { token: 'string', foreground: 'A31515' },                  // Red for quoted strings
     { token: 'string.proximity', foreground: 'A31515' },        // Red for proximity searches
     { token: 'string.escape', foreground: 'EE0000' },          // Bright red for escapes
@@ -205,19 +328,24 @@ export function registerLuceneLanguage(monaco: typeof import('monaco-editor'), f
   completionProviderDisposable = monaco.languages.registerCompletionItemProvider('lucene', {
     triggerCharacters: [':', ' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '_', '-', '.'],
     provideCompletionItems: (model, position) => {
+      // Parse query context for better completions
+      const fullQuery = model.getValue();
+      const cursorOffset = model.getOffsetAt(position);
+      const context = parseQueryContext(fullQuery, cursorOffset);
       const word = model.getWordUntilPosition(position);
       const lineText = model.getLineContent(position.lineNumber);
       const textBeforeCursor = lineText.substring(0, position.column - 1);
       
       // Check context for smart suggestions
       const isAfterColon = textBeforeCursor.match(/\w+:$/);
+      const isAfterComparison = textBeforeCursor.match(/\w+(>=|<=|>|<|=)$/);
       const isInRange = textBeforeCursor.match(/[[{][^}\]]*$/);
       const isAfterOperator = textBeforeCursor.match(/\b(AND|OR|NOT|&&|\|\||!|\+|-)\s*$/);
       const isAtStart = textBeforeCursor.trim() === '' || isAfterOperator;
-      const isTypingField = !isAfterColon && !isInRange && word.word.length > 0;
+      const isTypingField = !isAfterColon && !isAfterComparison && !isInRange && word.word.length > 0;
 
-      // Extract field name from "field:" or "field:value" pattern
-      const fieldMatch = textBeforeCursor.match(/(\w+):(\w*)$/);
+      // Extract field name from "field:" or "field:value" or "field>value" pattern
+      const fieldMatch = textBeforeCursor.match(/(\w+)[:>=<](\w*)$/);
       const currentField = fieldMatch ? fieldMatch[1] : null;
       const currentValue = fieldMatch ? fieldMatch[2] : '';
       const isTypingAfterColon = currentField && fieldMatch;
@@ -243,8 +371,28 @@ export function registerLuceneLanguage(monaco: typeof import('monaco-editor'), f
 
       const suggestions: languages.CompletionItem[] = [];
 
-      // Check if we're typing after a field colon for field-specific value suggestions
-      if (isTypingAfterColon && fieldSchema) {
+      // Enhanced context-aware suggestions using syntax tree
+      if (context.isInRange) {
+        // In range context, prioritize range-specific completions
+        suggestions.push({
+          label: 'TO',
+          kind: monaco.languages.CompletionItemKind.Keyword,
+          insertText: 'TO ',
+          documentation: 'Range query separator',
+          range: range,
+        });
+        
+        suggestions.push({
+          label: '*',
+          kind: monaco.languages.CompletionItemKind.Text,
+          insertText: '*',
+          documentation: 'Unbounded range wildcard',
+          range: range,
+        });
+      }
+      
+      // Check if we're typing after a field colon or comparison operator for field-specific value suggestions
+      if ((isTypingAfterColon || isAfterComparison) && fieldSchema) {
         const schemaField = fieldSchema.find(f => f.key === currentField);
         if (schemaField) {
           // Filter values based on what user is typing after colon
@@ -261,13 +409,15 @@ export function registerLuceneLanguage(monaco: typeof import('monaco-editor'), f
               range: range,
             });
           });
-          // Return early to show only field-specific values
-          return { suggestions };
+          // Return early to show only field-specific values if not in range
+          if (!context.isInRange) {
+            return { suggestions };
+          }
         }
       }
 
-      // Field name suggestions
-      if (isAtStart || isAfterOperator || isTypingField) {
+      // Field name suggestions - enhanced with context awareness
+      if ((isAtStart || isAfterOperator || isTypingField) && !context.isInRange) {
         // Default field names
         const defaultFields = [
           'title', 'author', 'content', 'text', 'date', 'category', 
@@ -307,8 +457,8 @@ export function registerLuceneLanguage(monaco: typeof import('monaco-editor'), f
         });
       }
 
-      // Operator suggestions
-      if (!isInRange) {
+      // Operator suggestions - enhanced with context awareness
+      if (!isInRange && !context.isInRange) {
         const operators = [
           { label: 'AND', doc: 'Boolean AND operator' },
           { label: 'OR', doc: 'Boolean OR operator' },
@@ -317,7 +467,12 @@ export function registerLuceneLanguage(monaco: typeof import('monaco-editor'), f
           { label: '||', doc: 'Boolean OR operator (alternative)' },
           { label: '!', doc: 'Boolean NOT operator (alternative)' },
           { label: '+', doc: 'Required term' },
-          { label: '-', doc: 'Prohibited term' }
+          { label: '-', doc: 'Prohibited term' },
+          { label: '>', doc: 'Greater than comparison' },
+          { label: '>=', doc: 'Greater than or equal comparison' },
+          { label: '<', doc: 'Less than comparison' },
+          { label: '<=', doc: 'Less than or equal comparison' },
+          { label: '=', doc: 'Exact equality comparison' }
         ];
         
         operators.forEach(op => {
@@ -331,19 +486,11 @@ export function registerLuceneLanguage(monaco: typeof import('monaco-editor'), f
         });
       }
 
-      // Range query TO keyword
-      if (isInRange) {
-        suggestions.push({
-          label: 'TO',
-          kind: monaco.languages.CompletionItemKind.Keyword,
-          insertText: 'TO ',
-          documentation: 'Range query separator',
-          range: range,
-        });
-      }
+      // Range query TO keyword (handled above in context-aware section)
+      // This section is now integrated into the context-aware suggestions
 
-      // Special search patterns
-      if (isAfterColon || isAtStart) {
+      // Special search patterns - context-aware
+      if ((isAfterColon || isAtStart) && !context.isInRange) {
         // Wildcard patterns
         suggestions.push({
           label: '*',
@@ -407,6 +554,25 @@ export function registerLuceneLanguage(monaco: typeof import('monaco-editor'), f
           insertText: '{${1:start} TO ${2:end}}',
           insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
           documentation: 'Exclusive range query',
+          range: range,
+        });
+
+        // Unbounded range queries
+        suggestions.push({
+          label: 'range from value',
+          kind: monaco.languages.CompletionItemKind.Snippet,
+          insertText: '[${1:start} TO *]',
+          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+          documentation: 'Range from value to infinity',
+          range: range,
+        });
+
+        suggestions.push({
+          label: 'range to value',
+          kind: monaco.languages.CompletionItemKind.Snippet,
+          insertText: '[* TO ${1:end}]',
+          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+          documentation: 'Range from negative infinity to value',
           range: range,
         });
 

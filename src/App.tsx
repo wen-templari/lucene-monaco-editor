@@ -11,7 +11,9 @@ function App() {
   // Define custom field schema for completion with state management
   const [fieldSchema, setFieldSchema] = useState<FieldSchema[]>([
     { key: 'level', values: ['warning', 'info', 'error'] },
-    { key: 'location', values: ['123.123.123', '3333.444'] }
+    { key: 'location', values: ['123.123.123', '3333.444'] },
+    { key: 'price', values: ['100', '200', '500'] },
+    { key: 'rating', values: ['1', '2', '3', '4', '5'] }
   ]);
 
   const editorRef = useRef<unknown>(null);
@@ -37,6 +39,10 @@ date:[2023-01-01 TO 2023-12-31]
 created:{2023-01-01T00:00:00Z TO 2023-12-31T23:59:59Z}
 content:/[Jj]ava.*/
 score:>5 && status:active
+price>=100 AND price<=500
+rating>3.5 AND reviews>=10
+timestamp:[2023-01-01 TO *]
+views:[* TO 1000]
 !urgent || priority:high
 level:warning
 location:123.123.123`)
