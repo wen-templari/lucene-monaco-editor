@@ -5,10 +5,7 @@ export class CompletionProvider implements vscode.CompletionItemProvider {
   provideCompletionItems(
     document: vscode.TextDocument,
     position: vscode.Position,
-    _token: vscode.CancellationToken,
-    _context: vscode.CompletionContext
   ): vscode.ProviderResult<vscode.CompletionItem[] | vscode.CompletionList> {
-    
     // Get the current line and text before cursor
     const lineText = document.lineAt(position).text;
     const textBeforeCursor = lineText.substring(0, position.character);
