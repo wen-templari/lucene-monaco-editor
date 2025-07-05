@@ -7,7 +7,7 @@ export const luceneLanguageDefinition: languages.IMonarchLanguage = {
   
   keywords: LUCENE_CONSTANTS.keywords,
   operators: LUCENE_CONSTANTS.operators,
-  brackets: LUCENE_CONSTANTS.brackets,
+  brackets: [...LUCENE_CONSTANTS.brackets],
 
   tokenizer: {
     root: [
