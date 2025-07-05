@@ -3,9 +3,13 @@
   "displayName": "Lucene Language Support",
   "description": "Language support for Apache Lucene query syntax with IntelliSense and syntax highlighting",
   "version": "1.0.0",
-  "publisher": "lucene-tools",
+  "publisher": "claswen",
   "engines": {
     "vscode": "^1.85.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wen-templari/lucene-monaco-editor.git"
   },
   "categories": [
     "Programming Languages",
@@ -81,9 +85,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts"
   },
-  "dependencies": {
-    "@lucene-tools/core": "workspace:*"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/vscode": "^1.85.0",
     "@vscode/test-electron": "^2.3.8",

@@ -1,0 +1,55 @@
+name: Publish VS Code Extension
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (optional, uses package.json version if not specified)'
+        required: false
+        type: string
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 8
+        
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+      
+    - name: Build extension
+      run: |
+        cd packages/vscode-extension
+        pnpm run build
+        
+    - name: Package extension
+      run: |
+        cd packages/vscode-extension
+        pnpm run package
+        
+    - name: Publish to VS Code Marketplace
+      run: |
+        cd packages/vscode-extension
+        npx @vscode/vsce publish --packagePath ./lucene-language-support-*.vsix
+      env:
+        VSCE_PAT: ${{ secrets.VSCODE_MARKETPLACE_TOKEN }}
+        
+    - name: Upload VSIX as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: vscode-extension
+        path: packages/vscode-extension/*.vsix
