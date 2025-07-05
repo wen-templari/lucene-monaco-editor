@@ -24,9 +24,6 @@
       "path": "./packages/monaco-language"
     },
     {
-      "path": "./packages/web-editor"
-    },
-    {
       "path": "./packages/vscode-extension"
     }
   ]

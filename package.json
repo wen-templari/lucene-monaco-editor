@@ -8,7 +8,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "pnpm -r build",
+    "build": "tsc -b && pnpm --filter web-editor build",
     "dev": "pnpm --filter web-editor dev",
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
