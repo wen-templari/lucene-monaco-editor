@@ -75,6 +75,9 @@ importers:
 
   packages/web-editor:
     dependencies:
+      '@lucene-tools/core':
+        specifier: workspace:*
+        version: link:../core
       '@lucene-tools/monaco-language':
         specifier: workspace:*
         version: link:../monaco-language
