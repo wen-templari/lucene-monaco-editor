@@ -28,6 +28,10 @@
     "eslint": "^9.29.0"
   },
   "publishConfig": {
-    "access": "public"
+    "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wen-templari/lucene-monaco-editor.git"
   }
 }

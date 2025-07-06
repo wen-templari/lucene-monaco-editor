@@ -4,89 +4,242 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a React-based Monaco Editor implementation with custom Lucene query syntax highlighting. The project provides a web-based editor specifically designed for writing and editing Apache Lucene search queries with comprehensive syntax highlighting support.
+This is a monorepo containing Lucene language support tools including a core parsing library, Monaco Editor integration, React web editor, and VS Code extension. The project provides comprehensive Apache Lucene query syntax highlighting and intelligent completion across multiple platforms.
 
-## Key Architecture
+## Monorepo Structure
 
-### Core Components
+### Package Architecture
+```
+packages/
+├── core/                    # @lucene-tools/core - Platform-agnostic parsing logic
+├── monaco-language/         # @lucene-tools/monaco-language - Monaco Editor integration  
+├── web-editor/             # @lucene-tools/web-editor - React web application
+└── vscode-extension/       # lucene-language-support - VS Code extension
+```
 
-- **`src/lucene-monarch.ts`**: The heart of the syntax highlighting system. Contains the Monaco Monarch language definition for Lucene queries, including:
-  - `luceneLanguageDefinition`: Complete tokenizer rules for all Lucene syntax elements
-  - `luceneTheme`: Dark theme with distinct colors for different token types
-  - `registerLuceneLanguage()`: Function to register the language with Monaco
-  - Stateful parsing for range queries with separate `rangeInclusive` and `rangeExclusive` states
-
-- **`src/App.tsx`**: Main React component that integrates the Monaco editor with the Lucene language definition. The language registration happens in the `onMount` callback to ensure Monaco is fully loaded.
-
-### Lucene Syntax Support
-
-The implementation supports comprehensive Lucene query syntax including:
-- Field queries (`field:value`)
-- Boolean operators (AND, OR, NOT, &&, ||, !)
-- Range queries with inclusive `[a TO b]` and exclusive `{a TO b}` brackets
-- Wildcard searches (`*`, `?`)
-- Fuzzy search with similarity (`term~0.8`)
-- Proximity search (`"phrase"~10`)
-- Boost queries (`term^2.5`)
-- Regular expressions (`/pattern/`)
-- Date format recognition (ISO 8601)
-- Escaped characters
+### Package Dependencies
+- `@lucene-tools/core`: Pure TypeScript with no external dependencies
+- `@lucene-tools/monaco-language`: Depends on core + Monaco Editor (peer dependency)
+- `@lucene-tools/web-editor`: Depends on monaco-language + React stack
+- `lucene-language-support`: Depends on core + VS Code API
 
 ## Development Commands
 
 ```bash
-# Start development server
-pnpm dev
-
-# Build for production
+# Build all packages (required order due to dependencies)
 pnpm build
 
-# Run linting
+# Start web editor development server
+pnpm dev
+
+# Run tests across all packages
+pnpm test
+
+# Run linting across all packages
 pnpm lint
 
-# Preview production build
-pnpm preview
+# Run type checking across all packages
+pnpm typecheck
+
+# Clean all build artifacts
+pnpm clean
+
+# Build specific package
+pnpm --filter @lucene-tools/core build
+
+# Add dependency to specific package
+pnpm --filter @lucene-tools/web-editor add <dependency>
+
+# Version management with Changeset
+pnpm changeset          # Create a changeset for version bump
+pnpm version-packages   # Apply changesets to update versions
+pnpm release           # Build and publish packages to npm
 ```
 
-## Technical Notes
+## Key Architecture Components
 
-### Monaco Editor Integration
+### Core Package (`packages/core/`)
+- **`tokenizer.ts`**: Lucene query tokenization with regex patterns
+- **`parser.ts`**: Query context parsing and field extraction
+- **`completion.ts`**: Completion suggestion generation
+- **`types.ts`**: TypeScript type definitions for all interfaces
 
-The project uses `@monaco-editor/react` wrapper. The custom Lucene language must be registered after Monaco is loaded, which is handled in the `onMount` callback of the Editor component.
+### Monaco Language Package (`packages/monaco-language/`)
+- **`monarch.ts`**: Monaco Monarch language definition for Lucene syntax
+- **`themes.ts`**: Dark and light theme definitions
+- **`completion-provider.ts`**: Monaco completion provider integration
+- **`register.ts`**: Main language registration function
 
-### TypeScript Configuration
+### Web Editor Package (`packages/web-editor/`)
+- **`App.tsx`**: Main React component with Monaco integration
+- **`FieldSchemaEditor.tsx`**: Dynamic field schema configuration
+- **`ThemeContext.tsx`**: Theme management with dark/light mode
 
-The project uses a multi-configuration TypeScript setup:
-- `tsconfig.json`: Root configuration with references
-- `tsconfig.app.json`: App-specific configuration
-- `tsconfig.node.json`: Node/Vite configuration
+### VS Code Extension Package (`packages/vscode-extension/`)
+- **`extension.ts`**: Extension activation and language registration
+- **`completionProvider.ts`**: VS Code completion provider
+- **`lucene.tmLanguage.json`**: TextMate grammar for syntax highlighting
 
-### Build Process
+## Build Process
 
-The build process runs TypeScript compilation (`tsc -b`) before Vite bundling to ensure type safety.
+The build process follows dependency order:
+1. TypeScript compilation (`tsc -b`) compiles all packages
+2. Web editor runs Vite build for production bundle
+3. VS Code extension packages with `vsce package`
 
-### Linting
+## Monaco Editor Integration
 
-ESLint is configured with:
-- TypeScript ESLint recommended rules
-- React Hooks plugin
-- React Refresh plugin for Vite
-- Strict type checking enabled
+Language registration happens in the `onMount` callback to ensure Monaco is fully loaded. The `registerLuceneLanguage()` function from monaco-language package handles:
+- Language definition registration
+- Theme application
+- Completion provider setup
+- Field schema configuration
 
-When making changes to the Lucene language definition, ensure:
-1. Regex patterns don't use unnecessary escapes (ESLint will catch these)
-2. All bracket definitions use the proper TypeScript interface format
-3. Function parameters are properly typed (avoid `any`)
-4. Unused function parameters use underscore prefix
+## Lucene Syntax Support
 
-### Testing the Implementation
+Comprehensive support for Apache Lucene query syntax:
+- Field queries with quoted field names
+- Boolean operators (AND, OR, NOT, &&, ||, !)
+- Range queries with inclusive/exclusive brackets
+- Comparison operators (>, >=, <, <=, =)
+- Wildcard and fuzzy searches
+- Proximity and boost queries
+- Regular expressions
+- Date format recognition
+- Escaped characters
 
-The app includes comprehensive example queries that demonstrate all supported Lucene syntax features. When testing changes, verify that all syntax elements are properly highlighted according to the defined theme colors.
+## Testing Guidelines
 
-### Testing Guidelines
+- Use `pnpm test` for running test suites across all packages
+- Use `pnpm test:coverage` for coverage reports
+- Use `pnpm test:ui` for interactive test UI (web-editor only)
+- Always run `pnpm build` and `pnpm lint` before committing
+- Each package has its own test suite using Vitest
 
-- Do not use `pnpm dev` for testing
-- Always test using:
-  - Build process: `pnpm build`
-  - Linting checks: `pnpm lint`
-  - Test suite: `pnpm test`
+## Package-Specific Development
+
+### Working on Core Logic
+```bash
+cd packages/core
+pnpm test --watch    # Watch mode for TDD
+pnpm typecheck      # Type checking
+```
+
+### Working on Monaco Integration
+```bash
+cd packages/monaco-language
+pnpm test           # Test language definition
+pnpm build          # Build for web-editor consumption
+```
+
+### Working on Web Editor
+```bash
+cd packages/web-editor
+pnpm dev            # Development server
+pnpm test:ui        # Interactive test runner
+```
+
+### Working on VS Code Extension
+```bash
+cd packages/vscode-extension
+pnpm build          # Compile TypeScript
+pnpm package        # Create .vsix package
+```
+
+## Release Management
+
+This project uses [Changesets](https://github.com/changesets/changesets) for version management and automated releases.
+
+### Creating a Release
+
+1. **Add a changeset** when making changes that need to be released:
+   ```bash
+   pnpm changeset
+   ```
+   - Select which packages are affected
+   - Choose the type of change (patch, minor, major)
+   - Write a summary of the changes
+
+2. **Version packages** to apply changesets:
+   ```bash
+   pnpm version-packages
+   ```
+   - Updates package.json versions
+   - Generates/updates CHANGELOG.md files
+   - Removes consumed changeset files
+
+3. **Publish to npm**:
+   ```bash
+   pnpm release
+   ```
+   - Builds all packages
+   - Publishes to npm registry
+
+### Automated GitHub Releases
+
+The project includes a GitHub Action (`.github/workflows/release.yml`) that:
+- Runs on pushes to main branch
+- Executes tests and builds
+- **Creates "Version Packages" PRs** automatically when changesets are detected
+- **Auto-publishes** to GitHub Packages when version PRs are merged
+- **Creates GitHub Releases** with changelogs automatically
+
+### Changeset Configuration
+
+- **GitHub Package Registry**: Packages are published to GitHub Packages
+- **Ignored packages**: `@lucene-tools/web-editor` is not published (private app)
+- **Internal dependencies**: Updated with patch versions automatically
+- **Base branch**: `main` branch for releases
+
+### GitHub Package Registry
+
+Packages are published to GitHub Package Registry under the `@lucene-tools` scope:
+- **Registry URL**: `https://npm.pkg.github.com`
+- **Package scope**: `@lucene-tools`
+- **Authentication**: Uses `GITHUB_TOKEN` for publishing
+
+To install packages from GitHub Registry:
+```bash
+# Configure npm to use GitHub registry for @lucene-tools scope
+npm config set @lucene-tools:registry https://npm.pkg.github.com
+
+# Install packages (requires GitHub authentication)
+npm install @lucene-tools/core
+npm install @lucene-tools/monaco-language
+```
+
+## Changeset Bot Workflow
+
+The repository is configured with an automated Changeset bot workflow:
+
+### How It Works
+1. **Add changesets** to your feature branches:
+   ```bash
+   pnpm changeset
+   ```
+
+2. **Push to main** - The bot automatically:
+   - Detects pending changesets
+   - Creates a "Version Packages" PR with:
+     - Updated package.json versions
+     - Generated CHANGELOG.md entries
+     - Consumed changeset files
+
+3. **Merge the Version PR** - The bot automatically:
+   - Publishes packages to GitHub Package Registry
+   - Creates GitHub Releases with changelogs
+   - Tags the release commits
+
+### Bot Features
+- **Automated versioning**: No manual version bumps needed
+- **Changelog generation**: Automatic CHANGELOG.md updates
+- **GitHub Releases**: Creates releases with proper tags
+- **Package publishing**: Publishes to GitHub Packages
+- **PR management**: Clean, predictable version PRs
+
+### Workflow Permissions
+The bot has the following permissions:
+- `contents: write` - Create releases and tags
+- `pull-requests: write` - Create and update version PRs
+- `packages: write` - Publish to GitHub Packages
+- `id-token: write` - Secure publishing authentication
