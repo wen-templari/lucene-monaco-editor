@@ -181,29 +181,26 @@ The project includes a GitHub Action (`.github/workflows/release.yml`) that:
 - Runs on pushes to main branch
 - Executes tests and builds
 - **Creates "Version Packages" PRs** automatically when changesets are detected
-- **Auto-publishes** to GitHub Packages when version PRs are merged
+- **Auto-publishes** to npm registry when version PRs are merged
 - **Creates GitHub Releases** with changelogs automatically
 
 ### Changeset Configuration
 
-- **GitHub Package Registry**: Packages are published to GitHub Packages
+- **npm Registry**: Packages are published to npm registry
 - **Ignored packages**: `@lucene-tools/web-editor` is not published (private app)
 - **Internal dependencies**: Updated with patch versions automatically
 - **Base branch**: `main` branch for releases
 
-### GitHub Package Registry
+### npm Registry
 
-Packages are published to GitHub Package Registry under the `@lucene-tools` scope:
-- **Registry URL**: `https://npm.pkg.github.com`
+Packages are published to the public npm registry under the `@lucene-tools` scope:
+- **Registry URL**: `https://registry.npmjs.org`
 - **Package scope**: `@lucene-tools`
-- **Authentication**: Uses `GITHUB_TOKEN` for publishing
+- **Authentication**: Uses `NPM_TOKEN` for publishing
 
-To install packages from GitHub Registry:
+To install packages from npm:
 ```bash
-# Configure npm to use GitHub registry for @lucene-tools scope
-npm config set @lucene-tools:registry https://npm.pkg.github.com
-
-# Install packages (requires GitHub authentication)
+# Install packages from npm registry
 npm install @lucene-tools/core
 npm install @lucene-tools/monaco-language
 ```
@@ -226,7 +223,7 @@ The repository is configured with an automated Changeset bot workflow:
      - Consumed changeset files
 
 3. **Merge the Version PR** - The bot automatically:
-   - Publishes packages to GitHub Package Registry
+   - Publishes packages to npm registry
    - Creates GitHub Releases with changelogs
    - Tags the release commits
 
@@ -234,12 +231,12 @@ The repository is configured with an automated Changeset bot workflow:
 - **Automated versioning**: No manual version bumps needed
 - **Changelog generation**: Automatic CHANGELOG.md updates
 - **GitHub Releases**: Creates releases with proper tags
-- **Package publishing**: Publishes to GitHub Packages
+- **Package publishing**: Publishes to npm registry
 - **PR management**: Clean, predictable version PRs
 
 ### Workflow Permissions
 The bot has the following permissions:
 - `contents: write` - Create releases and tags
 - `pull-requests: write` - Create and update version PRs
-- `packages: write` - Publish to GitHub Packages
+- `packages: write` - Publish to npm registry
 - `id-token: write` - Secure publishing authentication
