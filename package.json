@@ -11,7 +11,7 @@
     "build": "tsc -b && pnpm --filter web-editor build",
     "dev": "pnpm --filter web-editor dev",
     "lint": "pnpm -r lint",
-    "test": "pnpm -r test",
+    "test": "tsc -b && pnpm -r test",
     "test:ui": "pnpm --filter web-editor test:ui",
     "test:coverage": "pnpm -r test:coverage",
     "clean": "pnpm -r clean",
